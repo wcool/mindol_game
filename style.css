@@ -1,0 +1,465 @@
+:root {
+    --primary: #6366f1;
+    --primary-glow: rgba(99, 102, 241, 0.5);
+    --secondary: #a855f7;
+    --bg-dark: #0f172a;
+    --bg-darker: #020617;
+    --text-light: #f8fafc;
+    --text-dim: #94a3b8;
+    --glass: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --font-main: 'Outfit', 'Noto Sans KR', sans-serif;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background-color: var(--bg-darker);
+    color: var(--text-light);
+    font-family: var(--font-main);
+    overflow-x: hidden;
+    line-height: 1.6;
+}
+
+/* Background Blobs */
+.background-blobs {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+}
+
+.blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.15;
+    animation: move 20s infinite alternate;
+}
+
+.blob-1 {
+    width: 400px;
+    height: 400px;
+    background: var(--primary);
+    top: -100px;
+    right: -100px;
+}
+
+.blob-2 {
+    width: 500px;
+    height: 500px;
+    background: var(--secondary);
+    bottom: -150px;
+    left: -100px;
+    animation-delay: -5s;
+}
+
+.blob-3 {
+    width: 300px;
+    height: 300px;
+    background: #ec4899;
+    top: 40%;
+    left: 20%;
+    animation-delay: -10s;
+}
+
+@keyframes move {
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    100% {
+        transform: translate(50px, 50px) scale(1.1);
+    }
+}
+
+/* Typography */
+h1 {
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 1.5rem;
+}
+
+h2 {
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.gradient-text {
+    background: linear-gradient(to right, #818cf8, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Navigation */
+header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    padding: 1.5rem 5%;
+    z-index: 100;
+    transition: background 0.3s;
+}
+
+header.scrolled {
+    background: rgba(2, 6, 23, 0.8);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--glass-border);
+}
+
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.logo span {
+    color: var(--primary);
+}
+
+.nav-links a {
+    color: var(--text-light);
+    text-decoration: none;
+    margin-left: 2rem;
+    font-weight: 500;
+    transition: color 0.3s;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.nav-links a:hover {
+    color: var(--primary);
+}
+
+/* Sections */
+section {
+    padding: 100px 5%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Hero Section */
+.hero {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4rem;
+    padding-top: 150px;
+}
+
+.hero-content {
+    flex: 1.2;
+}
+
+.hero-content p {
+    font-size: 1.1rem;
+    color: var(--text-dim);
+    margin-bottom: 2.5rem;
+    max-width: 600px;
+}
+
+.hero-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.hero-image {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Buttons */
+.btn {
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: inline-block;
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 10px 20px -5px var(--primary-glow);
+}
+
+.btn-primary:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px -5px var(--primary-glow);
+}
+
+.btn-secondary {
+    background: var(--glass);
+    color: white;
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(5px);
+}
+
+.btn-secondary:hover {
+    background: var(--glass-border);
+    transform: translateY(-5px);
+}
+
+/* Game Cards */
+.game-card-featured {
+    width: 100%;
+    max-width: 400px;
+    aspect-ratio: 1 / 1.2;
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    position: relative;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
+
+.card-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 100% 0%, var(--primary-glow), transparent 70%);
+}
+
+.tag {
+    background: var(--primary);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: inline-block;
+    margin-bottom: 1rem;
+}
+
+.btn-play-link {
+    background: transparent;
+    border: 1px solid white;
+    padding: 0.6rem 1.2rem;
+    border-radius: 50px;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.btn-play-link:hover {
+    background: white;
+    color: var(--bg-darker);
+}
+
+.btn-play {
+    background: transparent;
+    border: none;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+    cursor: pointer;
+}
+
+.game-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-top: 3rem;
+}
+
+.game-card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    overflow: hidden;
+    transition: transform 0.3s;
+}
+
+.game-card:hover {
+    transform: translateY(-10px);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.game-thumb {
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.game-icon {
+    font-size: 4rem;
+    font-style: normal;
+}
+
+.game-info {
+    padding: 1.5rem;
+}
+
+.game-info h3 {
+    margin-bottom: 0.5rem;
+}
+
+.game-info p {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+.btn-small {
+    padding: 0.6rem 1.2rem;
+    border-radius: 10px;
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-small:hover {
+    background: var(--primary);
+    color: white;
+}
+
+/* About Section */
+.glass-panel {
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    padding: 4rem;
+    border-radius: 40px;
+    text-align: center;
+}
+
+.stats {
+    display: flex;
+    justify-content: center;
+    gap: 4rem;
+    margin-top: 3rem;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--primary);
+}
+
+.stat-label {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+}
+
+/* Animations */
+[data-reveal] {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+}
+
+[data-reveal="right"] {
+    transform: translateX(30px);
+}
+
+[data-reveal].active {
+    opacity: 1;
+    transform: translate(0, 0);
+}
+
+/* Footer */
+footer {
+    padding: 4rem 5%;
+    border-top: 1px solid var(--glass-border);
+    text-align: center;
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.social-links a {
+    color: var(--text-dim);
+    margin-left: 2rem;
+    text-decoration: none;
+    transition: color 0.3s;
+}
+
+.social-links a:hover {
+    color: var(--text-light);
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .hero {
+        flex-direction: column;
+        text-align: center;
+        padding-top: 100px;
+    }
+
+    .hero-content p {
+        margin: 0 auto 2.5rem;
+    }
+
+    .hero-image {
+        justify-content: center;
+    }
+
+    .hero-actions {
+        justify-content: center;
+    }
+
+    .footer-content {
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .stats {
+        gap: 2rem;
+    }
+}

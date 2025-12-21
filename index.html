@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>민돌이의 게임 세상 - Mindol's Game Studio</title>
+    <meta name="description" content="민돌이가 직접 만든 오프라인 웹게임을 즐겨보세요! 세련된 디자인과 재미있는 게임이 기다립니다.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+KR:wght@300;400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="background-blobs">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <header>
+        <nav>
+            <div class="logo">MINDOL <span>STUDIO</span></div>
+            <div class="nav-links">
+                <a href="#home">Home</a>
+                <a href="#games">Games</a>
+                <a href="#about">About</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section id="home" class="hero">
+            <div class="hero-content" data-reveal>
+                <h1>Explore <span class="gradient-text">Mindol's</span><br>Web Gaming Universe</h1>
+                <p>민돌이가 여가 시간에 정성껏 만든 오프라인 웹게임을 소개합니다. <br>심플하지만 중독성 있는 게임의 세계로 빠져보세요!</p>
+                <div class="hero-actions">
+                    <a href="#games" class="btn btn-primary">게임 보러가기</a>
+                    <a href="#about" class="btn btn-secondary">개발 스토리</a>
+                </div>
+            </div>
+            <div class="hero-image" data-reveal="right">
+                <div class="game-card-featured">
+                    <div class="card-glow"></div>
+                    <div class="card-content">
+                        <div class="tag">FEATURED GAME</div>
+                        <h3>Tower Defense</h3>
+                        <p>몰려오는 적들을 막아내세요. 전략이 곧 생존입니다.</p>
+                        <a href="mgames/towerdefence/index.html" class="btn-play-link">Play Now <span>→</span></a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="games" class="games-section">
+            <div class="section-header" data-reveal>
+                <h2>My Games</h2>
+                <p>민돌이가 개발한 게임 리스트입니다.</p>
+            </div>
+            <div class="game-grid">
+                <!-- Game 1 -->
+                <div class="game-card" data-reveal="bottom">
+                    <div class="game-thumb" style="background: linear-gradient(45deg, #6366f1, #a855f7);">
+                        <i class="game-icon">🌱</i>
+                    </div>
+                    <div class="game-info">
+                        <h3>Pikmin Adventure</h3>
+                        <p>피크민들과 함께 떠나는 신나는 모험.</p>
+                        <a href="mgames/pikmin/index.html" class="btn-small">Launch Game</a>
+                    </div>
+                </div>
+                <!-- Game 2 -->
+                <div class="game-card" data-reveal="bottom" data-delay="100">
+                    <div class="game-thumb" style="background: linear-gradient(45deg, #f59e0b, #ef4444);">
+                        <i class="game-icon">🧟</i>
+                    </div>
+                    <div class="game-info">
+                        <h3>Plants vs Zombies</h3>
+                        <p>정원을 지키기 위한 식물들의 전투.</p>
+                        <a href="mgames/PvsZ/index.html" class="btn-small">Launch Game</a>
+                    </div>
+                </div>
+                <!-- Game 3 -->
+                <div class="game-card" data-reveal="bottom" data-delay="200">
+                    <div class="game-thumb" style="background: linear-gradient(45deg, #10b981, #3b82f6);">
+                        <i class="game-icon">🛡️</i>
+                    </div>
+                    <div class="game-info">
+                        <h3>Tower Defense</h3>
+                        <p>강력한 타워들로 몰려오는 적들을 저지하세요.</p>
+                        <a href="mgames/towerdefence/index.html" class="btn-small">Launch Game</a>
+                    </div>
+                </div>
+
+                <!-- Game 4 -->
+                <div class="game-card" data-reveal="bottom" data-delay="300">
+                    <div class="game-thumb" style="background: linear-gradient(45deg, #ec4899, #8b5cf6);">
+                        <i class="game-icon">🐣</i>
+                    </div>
+                    <div class="game-info">
+                        <h3>Tamagotchi</h3>
+                        <p>귀여운 다마고치를 키워보세요!</p>
+                        <a href="mgames/dama/index.html" class="btn-small">Launch Game</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="about" class="about-section">
+            <div class="glass-panel" data-reveal>
+                <h2>Developer Mindol</h2>
+                <p>안녕하세요! 게임 개발을 취미로 즐기는 민돌이입니다. <br>시간 날 때마다 떠오르는 아이디어들을 게임으로 구현하고 있습니다. <br>사용자들의 즐거운 경험이 저의 가장 큰
+                    보람입니다.</p>
+                <div class="stats">
+                    <div class="stat-item">
+                        <span class="stat-value">5+</span>
+                        <span class="stat-label">Games Done</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">1k+</span>
+                        <span class="stat-label">Happy Players</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <p>&copy; 2025 Mindol Studio. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#">Github</a>
+                <a href="#">Twitter</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="main.js"></script>
+</body>
+
+</html>

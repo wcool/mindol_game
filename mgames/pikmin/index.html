@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>피크민 블룸 - 식물 키우기</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <h1>🌸 피크민 블룸</h1>
+            <div class="top-nav">
+                <button class="nav-btn" id="garden-btn">🌱 정원</button>
+                <button class="nav-btn" id="collection-btn">📖 도감</button>
+                <button class="nav-btn" id="settings-btn">⚙️ 설정</button>
+            </div>
+        </header>
+
+        <!-- 정원 화면 -->
+        <main class="game-main" id="garden-view" style="display: block;">
+            <div class="garden-grid" id="garden-grid">
+                <!-- 정원 슬롯들이 동적으로 생성됩니다 -->
+            </div>
+            
+            <div class="garden-controls">
+                <button class="control-btn" id="plant-btn">
+                    🌸 새 식물 심기
+                </button>
+                <button class="control-btn" id="water-all-btn">
+                    💧 전체 물주기
+                </button>
+                <button class="control-btn" id="mushroom-btn">
+                    🍄 버섯 부수기
+                </button>
+            </div>
+
+            <div class="info-panel">
+                <div class="garden-info">
+                    <h3>정원 정보</h3>
+                    <p>식물 수: <span id="plant-count">0</span>/9</p>
+                    <p>블룸 수: <span id="bloom-count">0</span></p>
+                    <p>경험치: <span id="exp">0</span></p>
+                </div>
+            </div>
+        </main>
+
+        <!-- 수집 화면 -->
+        <main class="collection-view" id="collection-view" style="display: none;">
+            <div class="collection-tabs">
+                <button class="tab-btn active" data-tab="plants">🌱 식물</button>
+                <button class="tab-btn" data-tab="blooms">🌸 블룸</button>
+                <button class="tab-btn" data-tab="achievements">🏆 업적</button>
+            </div>
+            
+            <div class="collection-content">
+                <div class="collection-grid" id="collection-grid">
+                    <!-- 수집한 아이템들이 표시됩니다 -->
+                </div>
+            </div>
+        </main>
+
+        <!-- 설정 화면 -->
+        <main class="settings-view" id="settings-view" style="display: none;">
+            <div class="settings-panel">
+                <h3>게임 설정</h3>
+                <button class="control-btn" id="save-btn">💾 게임 저장</button>
+                <button class="control-btn" id="load-btn">📂 게임 불러오기</button>
+                <button class="control-btn" id="reset-btn">🔄 게임 리셋</button>
+            </div>
+        </main>
+
+        <!-- 식물 심기 모달 -->
+        <div class="modal" id="plant-modal">
+            <div class="modal-content">
+                <h3>새 식물 심기</h3>
+                <div class="seed-selection">
+                    <div class="seed-option" data-type="red">
+                        <div class="seed-preview red-seed"></div>
+                        <span>빨간 피크민 씨앗</span>
+                    </div>
+                    <div class="seed-option" data-type="blue">
+                        <div class="seed-preview blue-seed"></div>
+                        <span>파란 피크민 씨앗</span>
+                    </div>
+                    <div class="seed-option" data-type="yellow">
+                        <div class="seed-preview yellow-seed"></div>
+                        <span>노란 피크민 씨앗</span>
+                    </div>
+                    <div class="seed-option" data-type="mushroom">
+                        <div class="seed-preview mushroom-seed"></div>
+                        <span>버섯 씨앗</span>
+                    </div>
+                </div>
+                <button class="modal-close">닫기</button>
+            </div>
+        </div>
+
+        <div class="notifications" id="notifications"></div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // 간단한 디버깅을 위한 스크립트
+        console.log('HTML loaded, starting game...');
+        
+        // 요소들이 제대로 로드되었는지 확인
+        window.addEventListener('load', () => {
+            console.log('Page fully loaded');
+            const gardenGrid = document.getElementById('garden-grid');
+            const plantBtn = document.getElementById('plant-btn');
+            const plantModal = document.getElementById('plant-modal');
+            const seedOptions = document.querySelectorAll('.seed-option');
+            
+            console.log('Elements found:', {
+                gardenGrid: !!gardenGrid,
+                plantBtn: !!plantBtn,
+                plantModal: !!plantModal,
+                seedOptions: seedOptions.length
+            });
+            
+            // 씨앗 옵션들 확인
+            seedOptions.forEach((option, index) => {
+                console.log(`Seed option ${index}:`, {
+                    element: option,
+                    type: option.getAttribute('data-type'),
+                    hasListener: option.onclick !== null
+                });
+            });
+        });
+    </script>
+</body>
+</html>

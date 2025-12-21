@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>다마고치 게임</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Name Input Screen -->
+    <div id="nameInputScreen" class="modal">
+        <div class="modal-content">
+            <h1>🥚 다마고치 탄생!</h1>
+            <p>당신의 다마고치 이름을 지어주세요:</p>
+            <input type="text" id="nameInput" maxlength="10" placeholder="이름 입력">
+            <button id="startButton" class="btn-primary">시작하기</button>
+        </div>
+    </div>
+
+    <!-- Main Game Container -->
+    <div id="gameContainer" style="display: none;">
+        <div class="game-device">
+            <!-- Header -->
+            <div class="game-header">
+                <div class="coin-display">
+                    <span class="coin-icon">🪙</span>
+                    <span id="coinCount">0</span>
+                </div>
+                <div class="light-indicator">
+                    <span id="lightIcon">💡</span>
+                </div>
+            </div>
+
+            <!-- Main Screen -->
+            <div class="game-screen">
+                <div id="mainScreen" class="screen-content">
+                    <!-- Status Indicators -->
+                    <div class="status-bar">
+                        <div class="status-item">
+                            <span class="status-icon">🍚</span>
+                            <div class="status-bar-fill">
+                                <div id="fullnessBar" class="bar-fill"></div>
+                            </div>
+                        </div>
+                        <div class="status-item">
+                            <span class="status-icon">😊</span>
+                            <div class="status-bar-fill">
+                                <div id="happinessBar" class="bar-fill"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tamagotchi Display -->
+                    <div class="tamagotchi-container">
+                        <div id="tamagotchiDisplay" class="tamagotchi">
+                            <div id="tamagotchiSprite">🥚</div>
+                            <div id="sickIndicator" class="sick-indicator" style="display: none;">🤒</div>
+                        </div>
+                        <div id="poopContainer"></div>
+                    </div>
+
+                    <!-- Info Display -->
+                    <div class="info-display">
+                        <span id="petName">다마고치</span>
+                        <span id="ageDisplay">나이: 0분</span>
+                    </div>
+                </div>
+
+                <!-- Mini Game Screen -->
+                <div id="gameScreen" class="screen-content" style="display: none;">
+                    <canvas id="gameCanvas" width="300" height="400"></canvas>
+                    <div class="game-instructions">
+                        ← → 키로 이동하여 코인을 모으세요!
+                    </div>
+                </div>
+
+                <!-- Health Meter Screen -->
+                <div id="healthScreen" class="screen-content" style="display: none;">
+                    <h2>헬스 미터</h2>
+                    <div class="health-info">
+                        <div class="health-row">
+                            <span class="health-label">이름:</span>
+                            <span id="healthName">-</span>
+                        </div>
+                        <div class="health-row">
+                            <span class="health-label">성별:</span>
+                            <span id="healthGender">-</span>
+                        </div>
+                        <div class="health-row">
+                            <span class="health-label">배부름:</span>
+                            <div class="health-bar">
+                                <div id="healthFullness" class="health-bar-fill"></div>
+                                <span id="healthFullnessText">0%</span>
+                            </div>
+                        </div>
+                        <div class="health-row">
+                            <span class="health-label">행복함:</span>
+                            <div class="health-bar">
+                                <div id="healthHappiness" class="health-bar-fill"></div>
+                                <span id="healthHappinessText">0%</span>
+                            </div>
+                        </div>
+                        <div class="health-row">
+                            <span class="health-label">몸무게:</span>
+                            <span id="healthWeight">-</span>
+                        </div>
+                        <div class="health-row">
+                            <span class="health-label">나이:</span>
+                            <span id="healthAge">-</span>
+                        </div>
+                    </div>
+                    <button class="btn-secondary" onclick="closeHealthMeter()">닫기</button>
+                </div>
+
+                <!-- Feed Menu Screen -->
+                <div id="feedScreen" class="screen-content" style="display: none;">
+                    <h2>밥 주기</h2>
+                    <div class="feed-options">
+                        <h3>식사</h3>
+                        <div class="food-grid">
+                            <button class="food-btn" onclick="feed('rice')">🍚 밥</button>
+                            <button class="food-btn" onclick="feed('meat')">🍖 고기</button>
+                            <button class="food-btn" onclick="feed('bread')">🍞 빵</button>
+                            <button class="food-btn" onclick="feed('noodle')">🍜 국수</button>
+                        </div>
+                        <h3>간식</h3>
+                        <div class="food-grid">
+                            <button class="food-btn" onclick="feed('candy')">🍬 사탕</button>
+                            <button class="food-btn" onclick="feed('cake')">🍰 케이크</button>
+                            <button class="food-btn" onclick="feed('icecream')">🍦 아이스크림</button>
+                            <button class="food-btn" onclick="feed('cookie')">🍪 쿠키</button>
+                        </div>
+                    </div>
+                    <button class="btn-secondary" onclick="closeFeedMenu()">닫기</button>
+                </div>
+
+                <!-- Shop Screen -->
+                <div id="shopScreen" class="screen-content" style="display: none;">
+                    <h2>🛒 상점</h2>
+                    <div id="shopGrid" class="shop-grid">
+                        <!-- Shop items will be dynamically generated -->
+                    </div>
+                    <button class="btn-secondary" onclick="closeShop()">닫기</button>
+                </div>
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="controls">
+                <button class="btn-control" onclick="openFeedMenu()">
+                    <span class="btn-icon">🍚</span>
+                    <span class="btn-label">밥주기</span>
+                </button>
+                <button class="btn-control" onclick="startMiniGame()">
+                    <span class="btn-icon">🎮</span>
+                    <span class="btn-label">놀아주기</span>
+                </button>
+                <button class="btn-control" onclick="cleanPoop()">
+                    <span class="btn-icon">🧹</span>
+                    <span class="btn-label">청소하기</span>
+                </button>
+                <button class="btn-control" onclick="giveMedicine()">
+                    <span class="btn-icon">💉</span>
+                    <span class="btn-label">주사놓기</span>
+                </button>
+                <button class="btn-control" onclick="showHealthMeter()">
+                    <span class="btn-icon">📊</span>
+                    <span class="btn-label">헬스미터</span>
+                </button>
+                <button class="btn-control" onclick="openShop()">
+                    <span class="btn-icon">🛒</span>
+                    <span class="btn-label">상점</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Death Screen -->
+    <div id="deathScreen" class="modal" style="display: none;">
+        <div class="modal-content death-content">
+            <h1>😢</h1>
+            <p id="deathMessage">당신의 다마고치가 세상을 떠났습니다...</p>
+            <button class="btn-primary" onclick="location.reload()">다시 시작</button>
+        </div>
+    </div>
+
+    <!-- Evolution Screen -->
+    <div id="evolutionScreen" class="modal" style="display: none;">
+        <div class="modal-content evolution-content">
+            <h1>✨ 진화! ✨</h1>
+            <div id="evolutionAnimation" class="evolution-animation"></div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+
+</html>

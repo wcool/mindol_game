@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>타워 디펜스 게임</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        
+        h1 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+        
+        canvas {
+            border: 3px solid #4a5568;
+            border-radius: 10px;
+            background: #f7fafc;
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+        
+        .controls {
+            margin: 20px 0;
+        }
+        
+        button {
+            background: #4299e1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 5px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background: #3182ce;
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+        }
+        
+        .game-info {
+            display: none; /* 홈 화면에서는 숨김 */
+        }
+        
+        .controls {
+            display: none; /* 홈 화면에서는 숨김 */
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🏰 타워 디펜스 게임 🏰</h1>
+        
+        <div class="game-info" id="gameInfo">
+            <div>💰 골드: <span id="gold">100</span></div>
+            <div>❤️ 생명력: <span id="lives">10</span></div>
+            <div>🎯 점수: <span id="score">0</span></div>
+            <div>🌊 웨이브: <span id="wave">1</span></div>
+        </div>
+        
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <div class="controls" id="gameControls">
+            <button id="startBtn">게임 시작</button>
+            <button id="pauseBtn">일시정지</button>
+            <button id="restartBtn">다시 시작</button>
+        </div>
+    </div>
+    
+    <script src="game.js"></script>
+    <script>
+        // 화면 전환 시 UI 표시/숨김 처리
+        function showGameUI() {
+            document.getElementById('gameInfo').style.display = 'flex';
+            document.getElementById('gameControls').style.display = 'block';
+        }
+        
+        function hideGameUI() {
+            document.getElementById('gameInfo').style.display = 'none';
+            document.getElementById('gameControls').style.display = 'none';
+        }
+        
+        // 게임 상태 변경 시 UI 업데이트
+        const originalUpdateUI = window.updateUI;
+        window.updateUI = function() {
+            if (window.gameState && window.gameState.currentScreen === 'game') {
+                showGameUI();
+            } else {
+                hideGameUI();
+            }
+        };
+    </script>
+</body>
+</html> 

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>식물 vs 좀비</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <div class="sun-counter">
+                <span class="sun-icon">☀️</span>
+                <span id="sunCount">50</span>
+            </div>
+            <div class="game-info">
+                <div class="wave-info">웨이브: <span id="waveCount">1</span></div>
+                <div class="zombie-count">좀비: <span id="zombieCount">0</span></div>
+                <div class="zombie-passed">통과: <span id="zombiePassed">0</span>/5</div>
+            </div>
+        </div>
+
+        <div class="plant-selector">
+            <div class="plant-card" data-plant="sunflower" data-cost="50">
+                <div class="plant-icon">🌻</div>
+                <div class="plant-name">해바라기</div>
+                <div class="plant-cost">50</div>
+            </div>
+            <div class="plant-card" data-plant="peashooter" data-cost="100">
+                <div class="plant-icon">🌱</div>
+                <div class="plant-name">완두콩</div>
+                <div class="plant-cost">100</div>
+            </div>
+            <div class="plant-card" data-plant="wallnut" data-cost="50">
+                <div class="plant-icon">🥜</div>
+                <div class="plant-name">벽돌</div>
+                <div class="plant-cost">50</div>
+            </div>
+            <div class="plant-card" data-plant="cherrybomb" data-cost="150">
+                <div class="plant-icon">🍒</div>
+                <div class="plant-name">체리폭탄</div>
+                <div class="plant-cost">150</div>
+            </div>
+            <div class="plant-card" data-plant="snowpea" data-cost="175">
+                <div class="plant-icon">❄️</div>
+                <div class="plant-name">스노우피</div>
+                <div class="plant-cost">175</div>
+            </div>
+            <div class="plant-card" data-plant="repeater" data-cost="200">
+                <div class="plant-icon">🌿</div>
+                <div class="plant-name">리피터</div>
+                <div class="plant-cost">200</div>
+            </div>
+            <div class="plant-card" data-plant="chomper" data-cost="150">
+                <div class="plant-icon">🪷</div>
+                <div class="plant-name">촘퍼</div>
+                <div class="plant-cost">150</div>
+            </div>
+            <div class="plant-card" data-plant="threepeater" data-cost="250">
+                <div class="plant-icon">🌾</div>
+                <div class="plant-name">쓰리피터</div>
+                <div class="plant-cost">250</div>
+            </div>
+            <div class="plant-card" data-plant="gatling" data-cost="300">
+                <div class="plant-icon">🌰</div>
+                <div class="plant-name">개틀링</div>
+                <div class="plant-cost">300</div>
+            </div>
+            <div class="plant-card" data-plant="torchwood" data-cost="175">
+                <div class="plant-icon">🔥</div>
+                <div class="plant-name">토치우드</div>
+                <div class="plant-cost">175</div>
+            </div>
+            <div class="plant-card" data-plant="tallnut" data-cost="125">
+                <div class="plant-icon">🌰</div>
+                <div class="plant-name">톨넛</div>
+                <div class="plant-cost">125</div>
+            </div>
+            <div class="plant-card" data-plant="squash" data-cost="50">
+                <div class="plant-icon">🥔</div>
+                <div class="plant-name">스쿼시</div>
+                <div class="plant-cost">50</div>
+            </div>
+            <div class="plant-card" data-plant="jalapeno" data-cost="125">
+                <div class="plant-icon">🌶️</div>
+                <div class="plant-name">할라피뇨</div>
+                <div class="plant-cost">125</div>
+            </div>
+            <div class="plant-card" data-plant="hypnoshroom" data-cost="75">
+                <div class="plant-icon">🍄</div>
+                <div class="plant-name">최면버섯</div>
+                <div class="plant-cost">75</div>
+            </div>
+            <div class="plant-card" data-plant="gloomshroom" data-cost="200">
+                <div class="plant-icon">💨</div>
+                <div class="plant-name">글로움슈룸</div>
+                <div class="plant-cost">200</div>
+            </div>
+            <div class="plant-card" data-plant="doomshroom" data-cost="125">
+                <div class="plant-icon">💣</div>
+                <div class="plant-name">둠슈룸</div>
+                <div class="plant-cost">125</div>
+            </div>
+            <div class="plant-card" data-plant="icepeashooter" data-cost="200">
+                <div class="plant-icon">🧊</div>
+                <div class="plant-name">아이스피</div>
+                <div class="plant-cost">200</div>
+            </div>
+        </div>
+
+        <div class="game-board" id="gameBoard">
+            <!-- Grid cells will be generated by JavaScript -->
+        </div>
+
+        <div class="game-status" id="gameStatus"></div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
+
