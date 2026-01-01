@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>뽑기 게임 - Claw Machine</title>
+    <meta name="description" content="100개의 귀여운 인형을 수집하는 뽑기 게임! 뽑기 집게를 조작하여 레어 인형을 획득하세요.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- 홈 화면 -->
+    <div id="home-screen" class="screen active">
+        <div class="home-container">
+            <h1 class="game-title">
+                <span class="title-icon">🎮</span>
+                뽑기 게임
+                <span class="title-icon">🎁</span>
+            </h1>
+            <p class="game-subtitle">100개의 인형을 모두 수집하세요!</p>
+
+            <div class="button-group">
+                <button class="btn btn-primary" id="start-game-btn">
+                    <span class="btn-icon">🎯</span>
+                    게임 시작
+                </button>
+                <button class="btn btn-secondary" id="collection-btn">
+                    <span class="btn-icon">📖</span>
+                    도감 보기
+                </button>
+            </div>
+
+            <div class="stats-panel">
+                <div class="stat-item">
+                    <div class="stat-label">수집한 인형</div>
+                    <div class="stat-value" id="collected-count">0 / 100</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">수집률</div>
+                    <div class="stat-value" id="collection-rate">0%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 게임 화면 -->
+    <div id="game-screen" class="screen">
+        <div class="game-container">
+            <div class="game-header">
+                <button class="btn btn-back" id="back-to-home">
+                    ← 홈으로
+                </button>
+                <div class="game-info">
+                    <span id="attempts-left">남은 기회: ∞</span>
+                </div>
+            </div>
+
+            <div class="game-area">
+                <!-- 뽑기 집게 -->
+                <div class="claw-container" id="claw-container">
+                    <div class="claw-cable" id="claw-cable"></div>
+                    <div class="claw" id="claw">
+                        <div class="claw-arm left"></div>
+                        <div class="claw-arm right"></div>
+                    </div>
+                </div>
+
+                <!-- 뽑기 통 -->
+                <div class="machine-box">
+                    <div class="machine-glass">
+                        <div class="dolls-container" id="dolls-container">
+                            <!-- 인형들이 여기에 동적으로 추가됩니다 -->
+                        </div>
+                    </div>
+                    <div class="machine-base"></div>
+                </div>
+
+                <!-- 출구 -->
+                <div class="prize-exit">
+                    <div class="exit-label">🎁 경품 출구</div>
+                </div>
+            </div>
+
+            <div class="controls-panel">
+                <div class="controls-info">
+                    <div class="control-item">
+                        <kbd>↑</kbd> 앞으로
+                    </div>
+                    <div class="control-item">
+                        <kbd>↓</kbd> 뒤로
+                    </div>
+                    <div class="control-item">
+                        <kbd>←</kbd> 왼쪽
+                    </div>
+                    <div class="control-item">
+                        <kbd>→</kbd> 오른쪽
+                    </div>
+                    <div class="control-item highlight">
+                        <kbd>Space</kbd> 뽑기 시작!
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 도감 화면 -->
+    <div id="collection-screen" class="screen">
+        <div class="collection-container">
+            <div class="collection-header">
+                <button class="btn btn-back" id="back-to-home-2">
+                    ← 홈으로
+                </button>
+                <h2 class="collection-title">인형 도감</h2>
+                <div class="collection-stats">
+                    <span id="collection-progress">0 / 100</span>
+                </div>
+            </div>
+
+            <div class="rarity-filter">
+                <button class="filter-btn active" data-rarity="all">전체</button>
+                <button class="filter-btn" data-rarity="common">기본</button>
+                <button class="filter-btn" data-rarity="rare">레어</button>
+                <button class="filter-btn" data-rarity="super_rare">슈퍼레어</button>
+                <button class="filter-btn" data-rarity="secret">시크릿</button>
+            </div>
+
+            <div class="collection-grid" id="collection-grid">
+                <!-- 도감 아이템들이 여기에 동적으로 추가됩니다 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 결과 모달 -->
+    <div id="result-modal" class="modal">
+        <div class="modal-content">
+            <div class="result-animation" id="result-animation">
+                <div class="result-icon" id="result-icon">🎉</div>
+            </div>
+            <h2 class="result-title" id="result-title">축하합니다!</h2>
+            <div class="result-doll" id="result-doll">
+                <img id="result-doll-img" src="" alt="">
+            </div>
+            <div class="result-info">
+                <div class="result-name" id="result-name"></div>
+                <div class="result-rarity" id="result-rarity"></div>
+                <div class="result-status" id="result-status"></div>
+            </div>
+            <button class="btn btn-primary" id="continue-btn">계속하기</button>
+        </div>
+    </div>
+
+    <script src="dolls-data.js"></script>
+    <script src="game.js"></script>
+</body>
+
+</html>

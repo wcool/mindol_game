@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>픽셀 아트 생성기</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+
+        canvas {
+            border: 2px solid #333;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            margin: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>다마고치 픽셀 아트 생성기</h1>
+        <p>간단한 픽셀 아트를 생성하여 다운로드할 수 있습니다.</p>
+
+        <div>
+            <button onclick="createButterfly()">나비 생성</button>
+            <button onclick="createCat()">고양이 생성</button>
+            <button onclick="createDog()">개 생성</button>
+            <button onclick="createRabbit()">토끼 생성</button>
+            <button onclick="createBear()">곰 생성</button>
+        </div>
+        <div>
+            <button onclick="createFrog()">개구리 생성</button>
+            <button onclick="createTurtle()">거북이 생성</button>
+            <button onclick="createSnail()">달팽이 생성</button>
+        </div>
+        <div>
+            <button onclick="createGhost()">유령 생성</button>
+            <button onclick="createAlien()">외계인 생성</button>
+            <button onclick="createZombie()">좀비 생성</button>
+            <button onclick="createSkull()">해골 생성</button>
+        </div>
+
+        <canvas id="canvas" width="64" height="64"></canvas>
+        <br>
+        <button onclick="downloadImage()">이미지 다운로드</button>
+
+        <div id="filename"></div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let currentFilename = '';
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, 64, 64);
+        }
+
+        function setPixel(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, 1, 1);
+        }
+
+        function createButterfly() {
+            clearCanvas();
+            currentFilename = 'adult_butterfly.png';
+
+            // 나비 몸통
+            for (let i = 28; i < 36; i++) {
+                setPixel(32, i, '#8B4513');
+            }
+
+            // 왼쪽 날개
+            for (let y = 20; y < 32; y++) {
+                for (let x = 20; x < 30; x++) {
+                    if ((x - 25) * (x - 25) + (y - 26) * (y - 26) < 36) {
+                        setPixel(x, y, '#FF69B4');
+                    }
+                }
+            }
+
+            // 오른쪽 날개
+            for (let y = 20; y < 32; y++) {
+                for (let x = 34; x < 44; x++) {
+                    if ((x - 39) * (x - 39) + (y - 26) * (y - 26) < 36) {
+                        setPixel(x, y, '#87CEEB');
+                    }
+                }
+            }
+
+            // 더듬이
+            setPixel(30, 26, '#000');
+            setPixel(29, 25, '#000');
+            setPixel(34, 26, '#000');
+            setPixel(35, 25, '#000');
+
+            document.getElementById('filename').textContent = '파일명: ' + currentFilename;
+        }
+
+        function createCat() {
+            clearCanvas();
+            currentFilename = 'adult_cat.png';
+
+            // 고양이 얼굴
+            for (let y = 24; y < 40; y++) {
+                for (let x = 24; x < 40; x++) {
+                    if ((x - 32) * (x - 32) + (y - 32) * (y - 32) < 64) {
+                        setPixel(x, y, '#FFA500');
+                    }
+                }
+            }
+
+            // 귀
+            for (let i = 0; i < 6; i++) {
+                setPixel(26 + i, 20 - i, '#FFA500');
+                setPixel(38 - i, 20 - i, '#FFA500');
+            }
+
+            // 눈
+            setPixel(28, 30, '#000');
+            setPixel(36, 30, '#000');
+
+            // 코
+            setPixel(32, 34, '#FF69B4');
+
+            // 수염
+            setPixel(20, 32, '#000');
+            setPixel(22, 32, '#000');
+            setPixel(42, 32, '#000');
+            setPixel(44, 32, '#000');
+
+            document.getElementById('filename').textContent = '파일명: ' + currentFilename;
+        }
+
+        function createDog() {
+            clearCanvas();
+            currentFilename = 'adult_dog.png';
+
+            // 개 얼굴
+            for (let y = 24; y < 40; y++) {
+                for (let x = 24; x < 40; x++) {
+                    if ((x - 32) * (x - 32) + (y - 32) * (y - 32) < 64) {
+                        setPixel(x, y, '#8B4513');
+                    }
+                }
+            }
+
+            // 귀 (늘어진)
+            for (let i = 0; i < 8; i++) {
+                for (let j = 0; j < 4; j++) {
+                    setPixel(20 + j, 24 + i, '#8B4513');
+                    setPixel(40 + j, 24 + i, '#8B4513');
+                }
+            }
+
+            // 눈
+            setPixel(28, 30, '#000');
+            setPixel(36, 30, '#000');
+
+            // 코
+            setPixel(31, 35, '#000');
+            setPixel(32, 35, '#000');
+            setPixel(33, 35, '#000');
+
+            // 혀
+            setPixel(32, 38, '#FF69B4');
+
+            document.getElementById('filename').textContent = '파일명: ' + currentFilename;
+        }
+
+        function createRabbit() {
+            clearCanvas();
+            currentFilename = 'adult_rabbit.png';
+
+            // 토끼 얼굴
+            for (let y = 28; y < 40; y++) {
+                for (let x = 26; x < 38; x++) {
+                    if ((x - 32) * (x - 32) + (y - 34) * (y - 34) < 36) {
+                        setPixel(x, y, '#FFB6C1');
+                    }
+                }
+            }
+
+            // 긴 귀
+            for (let i = 0; i < 12; i++) {
+                setPixel(28, 16 + i, '#FFB6C1');
+                setPixel(36, 16 + i, '#FFB6C1');
+            }
+
+            // 눈
+            setPixel(29, 32, '#000');
+            setPixel(35, 32, '#000');
+
+            // 코
+            setPixel(32, 36, '#FF69B4');
+
+            // 앞니
+            setPixel(31, 38, '#FFF');
+            setPixel(33, 38, '#FFF');
+
+            document.getElementById('filename').textContent = '파일명: ' + currentFilename;
+        }
+
+        function createBear() {
+            clearCanvas();
+            currentFilename = 'adult_bear.png';
+
+            // 곰 얼굴
+            for (let y = 24; y < 40; y++) {
+                for (let x = 24; x < 40; x++) {
+                    if ((x - 32) * (x - 32) + (y - 32) * (y - 32) < 64) {
+                        setPixel(x, y, '#8B4513');
+                    }
+                }
+            }
+
+            // 둥근 귀
+            for (let y = 18; y < 24; y++) {
+                for (let x = 22; x < 28; x++) {
+                    if ((x - 25) * (x - 25) + (y - 21) * (y - 21) < 9) {
+                        setPixel(x, y, '#8B4513');
+                    }
+                }
+            }
+            for (let y = 18; y < 24; y++) {
+                for (let x = 36; x < 42; x++) {
+                    if ((x - 39) * (x - 39) + (y - 21) * (y - 21) < 9) {
+                        setPixel(x, y, '#8B4513');
+                    }
+                }
+            }
+
+            // 눈
+            setPixel(28, 30, '#000');
+            setPixel(36, 30, '#000');
+
+            // 코
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 2; j++) {
+                    setPixel(31 + i, 34 + j, '#000');
+                }
+            }
+
+            document.getElementById('filename').textContent = '파일명: ' + currentFilename;
+        }
+
+        function createFrog() {
+            clearCanvas();
+            currentFilename = 'adult_frog.png';
+
+            // 개구리 몸
+            for (let y = 28; y < 40; y++) {
+                for (let x = 24; x < 40; x++) {
+                    if ((x - 32) * (x - 32) + (y - 34) * (y - 34) < 64) {
+                        setPixel(x, y, '#00FF00');
+                    }
+                }
+            }
+
+            // 큰 눈
+            for (let y = 22; y < 30; y++) {
+                for (let x = 24; x < 30; x++) {
+                    if ((x - 27) * (x - 27) + (y - 26) * (y - 26) < 16) {
+                        setPixel(x, y, '#FFF');
+                    }
+                }
+            }
+            for (let y = 22; y < 30; y++) {
+                for (let x = 34; x < 40; x++) {
+                    if ((x - 37) * (x - 37) + (y - 26) * (y - 26) < 16) {
+                        setPixel(x, y, '#FFF');
+                    }
+                }
+            }
+            setPixel(27, 26, '#000');
+            setPixel(37, 26, '#000');
+
+            // 입
+            for (let i = 0; i < 8; i++) {
+                setPixel(28 + i, 36, '#000');
+            }
+
+            document.getElementById('filename').textContent = '파일명: ' + currentFilename;
+        }
+
+        function createTurtle() {
+            clearCanvas();
+            currentFilename = 'adult_turtle.png';
+
+            // 거북이 등껍질
+            for (let y = 24; y < 38; y++) {
+                for (let x = 24; x < 40; x++) {
+                    if ((x - 32) * (x - 32) + (y - 31) * (y - 31) < 64) {
+                        setPixel(x, y, '#228B22');
+                    }
+                }
+            }
+
+            // 육각형 패턴
+            setPixel(28, 28, '#006400');
+            setPixel(32, 28, '#006400');
+            setPixel(36, 28, '#006400');
+            setPixel(28, 32, '#006400');
+            setPixel(32, 32, '#006400');
+            setPixel(36, 32, '#006400');
+
+            // 머리
+            for (let i = 0; i < 4; i++) {
+                setPixel(32 + i, 20 + i, '#90EE90');
+            }
+
+            // 눈
+            setPixel(34, 22, '#000');
+
+            document.getElementById('filename').textContent = '파일명: ' + currentFilename;
+        }
+
+        function createSnail() {
+            clearCanvas();
+            currentFilename = 'adult_snail.png';
+
+            // 달팽이 껍질
+            for (let y = 22; y < 36; y++) {
+                for (let x = 28; x < 42; x++) {
+                    if ((x - 35) * (x - 35) + (y - 29) * (y - 29) < 49) {
+                        setPixel(x, y, '#D2691E');
+                    }
+                }
+            }
+
+            // 나선 패턴
+            setPixel(35, 29, '#8B4513');
+            setPixel(34, 28, '#8B4513');
+            setPixel(36, 28, '#8B4513');
+            setPixel(33, 29, '#8B4513');
+            setPixel(37, 29, '#8B4513');
+
+            // 몸
+            for (let i = 0; i < 10; i++) {
+                setPixel(22 + i, 34, '#FFE4B5');
+            }
+
+            // 더듬이
+            setPixel(22, 32, '#FFE4B5');
+            setPixel(21, 30, '#FFE4B5');
+            setPixel(24, 32, '#FFE4B5');
+            setPixel(25, 30, '#FFE4B5');
+
+            document.getElementById('filename').textContent = '파일명: ' + currentFilename;
+        }
+
+        function createGhost() {
+            clearCanvas();
+            currentFilename = 'adult_ghost.png';
+
+            // 유령 몸
+            for (let y = 20; y < 40; y++) {
+                for (let x = 24; x < 40; x++) {
+                    if (y < 32 && (x - 32) * (x - 32) + (y - 32) * (y - 32) < 64) {
+                        setPixel(x, y, '#F0F0F0');
+                    } else if (y >= 32) {
+                        setPixel(x, y, '#F0F0F0');
+                    }
+                }
+            }
+
+            // 물결 모양 아래
+            for (let i = 0; i < 4; i++) {
+                setPixel(24 + i * 4, 40, 'transparent');
+                setPixel(25 + i * 4, 40, 'transparent');
+            }
+
+            // 눈
+            setPixel(28, 28, '#000');
+            setPixel(29, 28, '#000');
+            setPixel(34, 28, '#000');
+            setPixel(35, 28, '#000');
+
+            // 입
+            setPixel(30, 34, '#000');
+            setPixel(31, 35, '#000');
+            setPixel(32, 35, '#000');
+            setPixel(33, 34, '#000');
+
+            document.getElementById('filename').textContent = '파일명: ' + currentFilename;
+        }
+
+        function createAlien() {
+            clearCanvas();
+            currentFilename = 'adult_alien.png';
+
+            // 외계인 머리
+            for (let y = 20; y < 36; y++) {
+                for (let x = 24; x < 40; x++) {
+                    if ((x - 32) * (x - 32) + (y - 28) * (y - 28) < 64) {
+                        setPixel(x, y, '#00FF00');
+                    }
+                }
+            }
+
+            // 큰 눈
+            for (let y = 24; y < 32; y++) {
+                for (let x = 26; x < 32; x++) {
+                    if ((x - 29) * (x - 29) + (y - 28) * (y - 28) < 9) {
+                        setPixel(x, y, '#000');
+                    }
+                }
+            }
+            for (let y = 24; y < 32; y++) {
+                for (let x = 32; x < 38; x++) {
+                    if ((x - 35) * (x - 35) + (y - 28) * (y - 28) < 9) {
+                        setPixel(x, y, '#000');
+                    }
+                }
+            }
+
+            // 더듬이
+            setPixel(28, 18, '#00FF00');
+            setPixel(28, 16, '#FF0000');
+            setPixel(36, 18, '#00FF00');
+            setPixel(36, 16, '#FF0000');
+
+            document.getElementById('filename').textContent = '파일명: ' + currentFilename;
+        }
+
+        function createZombie() {
+            clearCanvas();
+            currentFilename = 'adult_zombie.png';
+
+            // 좀비 얼굴
+            for (let y = 24; y < 40; y++) {
+                for (let x = 24; x < 40; x++) {
+                    if ((x - 32) * (x - 32) + (y - 32) * (y - 32) < 64) {
+                        setPixel(x, y, '#90EE90');
+                    }
+                }
+            }
+
+            // 눈 (X 모양)
+            setPixel(27, 29, '#000');
+            setPixel(28, 30, '#000');
+            setPixel(29, 31, '#000');
+            setPixel(27, 31, '#000');
+            setPixel(29, 29, '#000');
+
+            setPixel(35, 29, '#000');
+            setPixel(36, 30, '#000');
+            setPixel(37, 31, '#000');
+            setPixel(35, 31, '#000');
+            setPixel(37, 29, '#000');
+
+            // 입 (지그재그)
+            for (let i = 0; i < 8; i++) {
+                setPixel(28 + i, 36 + (i % 2), '#000');
+            }
+
+            document.getElementById('filename').textContent = '파일명: ' + currentFilename;
+        }
+
+        function createSkull() {
+            clearCanvas();
+            currentFilename = 'adult_skull.png';
+
+            // 해골 머리
+            for (let y = 22; y < 38; y++) {
+                for (let x = 24; x < 40; x++) {
+                    if ((x - 32) * (x - 32) + (y - 30) * (y - 30) < 64) {
+                        setPixel(x, y, '#FFF');
+                    }
+                }
+            }
+
+            // 눈 구멍
+            for (let y = 26; y < 32; y++) {
+                for (let x = 26; x < 30; x++) {
+                    if ((x - 28) * (x - 28) + (y - 29) * (y - 29) < 4) {
+                        setPixel(x, y, '#000');
+                    }
+                }
+            }
+            for (let y = 26; y < 32; y++) {
+                for (let x = 34; x < 38; x++) {
+                    if ((x - 36) * (x - 36) + (y - 29) * (y - 29) < 4) {
+                        setPixel(x, y, '#000');
+                    }
+                }
+            }
+
+            // 코
+            setPixel(32, 33, '#000');
+            setPixel(31, 34, '#000');
+            setPixel(33, 34, '#000');
+
+            // 이빨
+            for (let i = 0; i < 6; i++) {
+                if (i % 2 === 0) {
+                    setPixel(29 + i, 38, '#000');
+                }
+            }
+
+            document.getElementById('filename').textContent = '파일명: ' + currentFilename;
+        }
+
+        function downloadImage() {
+            if (!currentFilename) {
+                alert('먼저 이미지를 생성해주세요!');
+                return;
+            }
+
+            const link = document.createElement('a');
+            link.download = currentFilename;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+
+</html>

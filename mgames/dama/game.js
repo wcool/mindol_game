@@ -22,50 +22,50 @@ let miniGame = {
 // Evolution stages with sprites - Expanded with many varieties
 const evolutionStages = [
     // Stage 0: Egg
-    { name: 'egg', sprite: '🥚', stage: 0, minAge: 0 },
+    { name: 'egg', sprite: 'images/egg.png', emoji: '🥚', stage: 0, minAge: 0 },
 
     // Stage 1: Baby (1 form)
-    { name: 'baby', sprite: '👶', stage: 1, minAge: 5 },
+    { name: 'baby', sprite: 'images/baby.png', emoji: '👶', stage: 1, minAge: 5 },
 
     // Stage 2: Child (3 forms based on care)
-    { name: 'child_happy', sprite: '😊', stage: 2, minAge: 10, minCare: 70 },
-    { name: 'child_normal', sprite: '😐', stage: 2, minAge: 10, minCare: 40, maxCare: 70 },
-    { name: 'child_sad', sprite: '😢', stage: 2, minAge: 10, maxCare: 40 },
+    { name: 'child_happy', sprite: 'images/child_happy.png', emoji: '😊', stage: 2, minAge: 10, minCare: 70 },
+    { name: 'child_normal', sprite: 'images/child_normal.png', emoji: '😐', stage: 2, minAge: 10, minCare: 40, maxCare: 70 },
+    { name: 'child_sad', sprite: 'images/child_sad.png', emoji: '😢', stage: 2, minAge: 10, maxCare: 40 },
 
     // Stage 3: Teen (5 forms based on stats)
-    { name: 'teen_energetic', sprite: '⚡', stage: 3, minAge: 15, minHappiness: 80 },
-    { name: 'teen_healthy', sprite: '💪', stage: 3, minAge: 15, minFullness: 80, minHappiness: 60 },
-    { name: 'teen_smart', sprite: '🧠', stage: 3, minAge: 15, minCare: 70 },
-    { name: 'teen_lazy', sprite: '😴', stage: 3, minAge: 15, maxFullness: 40 },
-    { name: 'teen_grumpy', sprite: '😠', stage: 3, minAge: 15, maxHappiness: 40 },
+    { name: 'teen_energetic', sprite: 'images/teen_energetic.png', emoji: '⚡', stage: 3, minAge: 15, minHappiness: 80 },
+    { name: 'teen_healthy', sprite: 'images/teen_healthy.png', emoji: '💪', stage: 3, minAge: 15, minFullness: 80, minHappiness: 60 },
+    { name: 'teen_smart', sprite: 'images/teen_smart.png', emoji: '🧠', stage: 3, minAge: 15, minCare: 70 },
+    { name: 'teen_lazy', sprite: 'images/teen_lazy.png', emoji: '😴', stage: 3, minAge: 15, maxFullness: 40 },
+    { name: 'teen_grumpy', sprite: 'images/teen_grumpy.png', emoji: '😠', stage: 3, minAge: 15, maxHappiness: 40 },
 
     // Stage 4: Adult (15+ forms based on care quality and stats)
     // Legendary forms (90+ care)
-    { name: 'adult_angel', sprite: '😇', stage: 4, minAge: 20, minCare: 90 },
-    { name: 'adult_star', sprite: '⭐', stage: 4, minAge: 20, minCare: 90, minHappiness: 90 },
+    { name: 'adult_angel', sprite: 'images/adult_angel.png', emoji: '😇', stage: 4, minAge: 20, minCare: 90 },
+    { name: 'adult_star', sprite: 'images/adult_star.png', emoji: '⭐', stage: 4, minAge: 20, minCare: 90, minHappiness: 90 },
 
     // Great forms (70-90 care)
-    { name: 'adult_unicorn', sprite: '🦄', stage: 4, minAge: 20, minCare: 70, maxCare: 90 },
-    { name: 'adult_dragon', sprite: '🐉', stage: 4, minAge: 20, minCare: 70, minFullness: 70 },
-    { name: 'adult_phoenix', sprite: '🔥', stage: 4, minAge: 20, minCare: 70, minHappiness: 80 },
-    { name: 'adult_butterfly', sprite: '🦋', stage: 4, minAge: 20, minCare: 70, minHappiness: 75 },
+    { name: 'adult_unicorn', sprite: 'images/adult_unicorn.png', emoji: '🦄', stage: 4, minAge: 20, minCare: 70, maxCare: 90 },
+    { name: 'adult_dragon', sprite: 'images/adult_dragon.png', emoji: '🐉', stage: 4, minAge: 20, minCare: 70, minFullness: 70 },
+    { name: 'adult_phoenix', sprite: 'images/adult_phoenix.png', emoji: '🔥', stage: 4, minAge: 20, minCare: 70, minHappiness: 80 },
+    { name: 'adult_butterfly', sprite: '🦋', emoji: '🦋', stage: 4, minAge: 20, minCare: 70, minHappiness: 75 },
 
     // Good forms (50-70 care)
-    { name: 'adult_cat', sprite: '🐱', stage: 4, minAge: 20, minCare: 50, maxCare: 70 },
-    { name: 'adult_dog', sprite: '🐶', stage: 4, minAge: 20, minCare: 50, maxCare: 70, minHappiness: 60 },
-    { name: 'adult_rabbit', sprite: '🐰', stage: 4, minAge: 20, minCare: 50, maxCare: 70 },
-    { name: 'adult_bear', sprite: '🐻', stage: 4, minAge: 20, minCare: 50, maxCare: 70, minFullness: 60 },
+    { name: 'adult_cat', sprite: '🐱', emoji: '🐱', stage: 4, minAge: 20, minCare: 50, maxCare: 70 },
+    { name: 'adult_dog', sprite: '🐶', emoji: '🐶', stage: 4, minAge: 20, minCare: 50, maxCare: 70, minHappiness: 60 },
+    { name: 'adult_rabbit', sprite: '🐰', emoji: '🐰', stage: 4, minAge: 20, minCare: 50, maxCare: 70 },
+    { name: 'adult_bear', sprite: '🐻', emoji: '🐻', stage: 4, minAge: 20, minCare: 50, maxCare: 70, minFullness: 60 },
 
     // Average forms (30-50 care)
-    { name: 'adult_frog', sprite: '🐸', stage: 4, minAge: 20, minCare: 30, maxCare: 50 },
-    { name: 'adult_turtle', sprite: '🐢', stage: 4, minAge: 20, minCare: 30, maxCare: 50 },
-    { name: 'adult_snail', sprite: '🐌', stage: 4, minAge: 20, minCare: 30, maxCare: 50, maxHappiness: 50 },
+    { name: 'adult_frog', sprite: '🐸', emoji: '🐸', stage: 4, minAge: 20, minCare: 30, maxCare: 50 },
+    { name: 'adult_turtle', sprite: '🐢', emoji: '🐢', stage: 4, minAge: 20, minCare: 30, maxCare: 50 },
+    { name: 'adult_snail', sprite: '🐌', emoji: '🐌', stage: 4, minAge: 20, minCare: 30, maxCare: 50, maxHappiness: 50 },
 
     // Poor forms (below 30 care)
-    { name: 'adult_ghost', sprite: '👻', stage: 4, minAge: 20, maxCare: 30 },
-    { name: 'adult_alien', sprite: '👾', stage: 4, minAge: 20, maxCare: 30, maxHappiness: 40 },
-    { name: 'adult_zombie', sprite: '🧟', stage: 4, minAge: 20, maxCare: 30, maxFullness: 30 },
-    { name: 'adult_skull', sprite: '💀', stage: 4, minAge: 20, maxCare: 20 }
+    { name: 'adult_ghost', sprite: '👻', emoji: '👻', stage: 4, minAge: 20, maxCare: 30 },
+    { name: 'adult_alien', sprite: '👾', emoji: '👾', stage: 4, minAge: 20, maxCare: 30, maxHappiness: 40 },
+    { name: 'adult_zombie', sprite: '🧟', emoji: '🧟', stage: 4, minAge: 20, maxCare: 30, maxFullness: 30 },
+    { name: 'adult_skull', sprite: '💀', emoji: '💀', stage: 4, minAge: 20, maxCare: 20 }
 ];
 
 // Tamagotchi Class
@@ -271,7 +271,16 @@ function updateSprite() {
     if (!tamagotchi || tamagotchi.isSleeping) return;
 
     const stage = evolutionStages[tamagotchi.evolutionStage];
-    document.getElementById('tamagotchiSprite').textContent = stage.sprite;
+    const spriteElement = document.getElementById('tamagotchiSprite');
+
+    // Check if sprite is an image path or emoji
+    if (stage.sprite.endsWith('.png')) {
+        // Use image
+        spriteElement.innerHTML = `<img src="${stage.sprite}" alt="${stage.name}" style="width: 100%; height: 100%; image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges;">`;
+    } else {
+        // Use emoji
+        spriteElement.textContent = stage.sprite;
+    }
 }
 
 // Timers
@@ -495,7 +504,7 @@ function updateMiniGame() {
 
     // Draw player
     ctx.font = '30px Arial';
-    ctx.fillText(evolutionStages[tamagotchi.evolutionStage].sprite, miniGame.player.x, miniGame.player.y);
+    ctx.fillText(evolutionStages[tamagotchi.evolutionStage].emoji, miniGame.player.x, miniGame.player.y);
 
     // Update and draw coins
     for (let i = miniGame.coins.length - 1; i >= 0; i--) {
@@ -565,7 +574,13 @@ function showEvolutionScreen() {
     setTimeout(() => {
         // Show new form
         const stage = evolutionStages[tamagotchi.evolutionStage];
-        evolutionAnimation.textContent = stage.sprite;
+
+        // Check if sprite is an image or emoji
+        if (stage.sprite.endsWith('.png')) {
+            evolutionAnimation.innerHTML = `<img src="${stage.sprite}" alt="${stage.name}" style="width: 120px; height: 120px; image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges;">`;
+        } else {
+            evolutionAnimation.textContent = stage.sprite;
+        }
 
         setTimeout(() => {
             evolutionScreen.style.display = 'none';
