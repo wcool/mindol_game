@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>식물 vs 좀비</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <div class="game-container">
         <div class="game-header">
@@ -14,6 +16,9 @@
                 <span id="sunCount">50</span>
             </div>
             <div class="game-info">
+                <button onclick="window.location.href='../../index.html'"
+                    style="background: #4299e1; color: white; border: none; padding: 8px 16px; border-radius: 5px; cursor: pointer; margin-right: 10px;">🏠
+                    홈</button>
                 <div class="wave-info">웨이브: <span id="waveCount">1</span></div>
                 <div class="zombie-count">좀비: <span id="zombieCount">0</span></div>
                 <div class="zombie-passed">통과: <span id="zombiePassed">0</span>/5</div>
@@ -117,5 +122,5 @@
 
     <script src="game.js"></script>
 </body>
-</html>
 
+</html>
