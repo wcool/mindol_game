@@ -1,4 +1,4 @@
-// 게임 상태
+﻿// 게임 상태
 const gameState = {
     gold: 100,
     lives: 10,
@@ -933,18 +933,16 @@ function gameLoop(currentTime) {
 canvas.addEventListener('click', (e) => {
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const y = e.clientY - rect.top;`n    `n    // 캔버스 스케일 고려한 좌표 변환 (모바일 대응)`n    const scaleX = canvas.width / rect.width;`n    const scaleY = canvas.height / rect.height;`n    const canvasX = x * scaleX;`n    const canvasY = y * scaleY;
     
-    if (gameState.currentScreen === 'home') {
-        // 전투 시작 버튼
-        if (x > canvas.width/2 - 150 && x < canvas.width/2 - 30 && y > 300 && y < 350) {
+    if (gameState.currentScreen === 'home') {`n        // 전투 시작 버튼`n        if (canvascanvasX \u003e canvas.width/2 - 150 && canvasX \u003c canvas.width/2 - 30 && canvasY \u003e 300 && canvasY \u003c 350) {
             gameState.currentScreen = 'game';
             initGame();
             gameState.isRunning = true;
             createWave();
         }
         // 상점 버튼
-        else if (x > canvas.width/2 + 30 && x < canvas.width/2 + 150 && y > 300 && y < 350) {
+        else if (canvasX \u003e canvas.width/2 + 30 && canvasX \u003c canvas.width/2 + 150 && canvasY \u003e 300 && canvasY \u003c 350)) {
             gameState.currentScreen = 'shop';
         }
     }
