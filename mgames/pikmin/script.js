@@ -1,4 +1,4 @@
-// 전역 변수
+﻿// 전역 변수
 let gameState = {
     garden: new Array(9).fill(null),
     selectedSeedType: null,
@@ -212,7 +212,7 @@ function selectSeedType(type) {
     showNotification(`${getTypeName(type)} 선택됨! 이제 정원 슬롯을 클릭하세요.`);
 
     // 모달을 자동으로 닫기 (모바일 UX 개선)
-    hidePlantModal();
+    hidePlantModal(false);
 }
 
 function handleSlotClick(index) {
@@ -252,7 +252,7 @@ function plantSeed(index) {
     updateDisplay();
 
     showNotification(`${getTypeName(gameState.selectedSeedType)} 씨앗을 심었습니다! 🌱`);
-    hidePlantModal();
+    hidePlantModal(false);
 }
 
 function updatePlantDisplay(index) {
