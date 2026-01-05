@@ -84,14 +84,14 @@ const ctx = canvas.getContext('2d');
 
 // 게임 경로
 const path = [
-    {x: 0, y: 300},
-    {x: 200, y: 300},
-    {x: 200, y: 100},
-    {x: 400, y: 100},
-    {x: 400, y: 500},
-    {x: 600, y: 500},
-    {x: 600, y: 300},
-    {x: 800, y: 300}
+    { x: 0, y: 300 },
+    { x: 200, y: 300 },
+    { x: 200, y: 100 },
+    { x: 400, y: 100 },
+    { x: 400, y: 500 },
+    { x: 600, y: 500 },
+    { x: 600, y: 300 },
+    { x: 800, y: 300 }
 ];
 
 // 타워 클래스
@@ -105,11 +105,11 @@ class Tower {
         this.lastFire = 0;
         this.target = null;
         this.criticalChance = gameState.shopItems.find(item => item.id === 'critical').owned * 0.15 + gameState.shopItems.find(item => item.id === 'lucky_shot').owned * 0.25;
-        
+
         // 타워 타입 결정 (가장 높은 레벨의 아이템 기준)
         this.towerType = this.getTowerType();
     }
-    
+
     getTowerType() {
         const items = gameState.shopItems;
         if (items.find(item => item.id === 'golden_tower').owned > 0) return 'golden';
@@ -125,28 +125,28 @@ class Tower {
     update(enemies, currentTime) {
         this.target = null;
         let closestDistance = this.range;
-        
+
         for (let enemy of enemies) {
             const distance = Math.sqrt(
                 Math.pow(this.x - enemy.x, 2) + Math.pow(this.y - enemy.y, 2)
             );
-            
+
             if (distance < closestDistance) {
                 closestDistance = distance;
                 this.target = enemy;
             }
         }
-        
+
         if (this.target && currentTime - this.lastFire > this.fireRate) {
             // 크리티컬 공격 체크
             const isCritical = Math.random() < this.criticalChance;
             const finalDamage = isCritical ? this.damage * 2 : this.damage;
-            
+
             // 타워 타입에 따른 특별 효과
             let projectileType = 'basic';
             let specialDamage = finalDamage;
-            
-            switch(this.towerType) {
+
+            switch (this.towerType) {
                 case 'laser':
                     projectileType = 'laser';
                     specialDamage = finalDamage * 1.5;
@@ -176,7 +176,7 @@ class Tower {
                     specialDamage = finalDamage * 1.4;
                     break;
             }
-            
+
             gameState.projectiles.push(new Projectile(
                 this.x, this.y, this.target, specialDamage, isCritical, projectileType
             ));
@@ -189,8 +189,8 @@ class Tower {
         let towerColor = '#4299e1';
         let towerEmoji = '🏰';
         let rangeColor = 'rgba(66, 153, 225, 0.3)';
-        
-        switch(this.towerType) {
+
+        switch (this.towerType) {
             case 'laser':
                 towerColor = '#ff0000';
                 towerEmoji = '🔴';
@@ -227,10 +227,10 @@ class Tower {
                 rangeColor = 'rgba(255, 0, 255, 0.3)';
                 break;
         }
-        
+
         ctx.fillStyle = towerColor;
         ctx.fillRect(this.x - 15, this.y - 15, 30, 30);
-        
+
         if (gameState.isRunning) {
             ctx.strokeStyle = rangeColor;
             ctx.lineWidth = 2;
@@ -238,7 +238,7 @@ class Tower {
             ctx.arc(this.x, this.y, this.range, 0, Math.PI * 2);
             ctx.stroke();
         }
-        
+
         ctx.fillStyle = '#2d3748';
         ctx.font = '20px Arial';
         ctx.textAlign = 'center';
@@ -253,7 +253,7 @@ class Enemy {
         this.x = path[0].x;
         this.y = path[0].y;
         this.isBoss = isBoss;
-        
+
         if (isBoss) {
             this.health = config.bossHealth + (gameState.stage - 1) * 100;
             this.maxHealth = this.health;
@@ -272,44 +272,44 @@ class Enemy {
             gameState.lives--;
             return false;
         }
-        
+
         const targetPoint = path[this.pathIndex + 1];
         const dx = targetPoint.x - this.x;
         const dy = targetPoint.y - this.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        
+
         if (distance < 5) {
             this.pathIndex++;
         } else {
             this.x += (dx / distance) * this.speed;
             this.y += (dy / distance) * this.speed;
         }
-        
+
         return true;
     }
 
     draw() {
         const size = this.isBoss ? 40 : 24;
         const offset = size / 2;
-        
+
         ctx.fillStyle = this.isBoss ? '#9b2c2c' : '#e53e3e';
         ctx.fillRect(this.x - offset, this.y - offset, size, size);
-        
+
         ctx.fillStyle = '#2d3748';
         ctx.font = this.isBoss ? '24px Arial' : '16px Arial';
         ctx.textAlign = 'center';
         ctx.fillText(this.isBoss ? '👹' : '👾', this.x, this.y + (this.isBoss ? 6 : 4));
-        
+
         // 체력바
         const barWidth = this.isBoss ? 50 : 30;
         const barHeight = this.isBoss ? 6 : 4;
         const healthPercent = this.health / this.maxHealth;
-        
+
         ctx.fillStyle = '#e53e3e';
-        ctx.fillRect(this.x - barWidth/2, this.y - (this.isBoss ? 30 : 20), barWidth, barHeight);
-        
+        ctx.fillRect(this.x - barWidth / 2, this.y - (this.isBoss ? 30 : 20), barWidth, barHeight);
+
         ctx.fillStyle = '#48bb78';
-        ctx.fillRect(this.x - barWidth/2, this.y - (this.isBoss ? 30 : 20), barWidth * healthPercent, barHeight);
+        ctx.fillRect(this.x - barWidth / 2, this.y - (this.isBoss ? 30 : 20), barWidth * healthPercent, barHeight);
     }
 
     takeDamage(damage) {
@@ -317,31 +317,31 @@ class Enemy {
         if (this.health <= 0) {
             let goldReward = this.reward;
             let scoreReward = this.reward;
-            
+
             // 골드 부스터 아이템 효과
             const goldBooster = gameState.shopItems.find(item => item.id === 'gold');
             if (goldBooster.owned > 0) {
                 goldReward += goldBooster.owned * 5;
             }
-            
+
             // 골드 더블 아이템 효과
             const doubleGold = gameState.shopItems.find(item => item.id === 'double_gold');
             if (doubleGold.owned > 0) {
                 goldReward *= 2;
             }
-            
+
             // 점수 부스터 아이템 효과
             const scoreBooster = gameState.shopItems.find(item => item.id === 'score_boost');
             if (scoreBooster.owned > 0) {
                 scoreReward += scoreBooster.owned * 10;
             }
-            
+
             // 흡혈 공격 아이템 효과
             const vampire = gameState.shopItems.find(item => item.id === 'vampire');
             if (vampire.owned > 0) {
                 gameState.lives = Math.min(gameState.lives + 1, 10 + (gameState.shopItems.find(item => item.id === 'life').owned * 3));
             }
-            
+
             gameState.gold += goldReward;
             gameState.score += scoreReward;
             return false;
@@ -360,9 +360,9 @@ class Projectile {
         this.isCritical = isCritical;
         this.type = type;
         this.speed = 5;
-        
+
         // 타입에 따른 속도 조정
-        switch(type) {
+        switch (type) {
             case 'laser':
                 this.speed = 8;
                 break;
@@ -389,11 +389,11 @@ class Projectile {
 
     update() {
         if (!this.target) return false;
-        
+
         const dx = this.target.x - this.x;
         const dy = this.target.y - this.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
-        
+
         if (distance < 5) {
             if (!this.target.takeDamage(this.damage)) {
                 const index = gameState.enemies.indexOf(this.target);
@@ -403,7 +403,7 @@ class Projectile {
             }
             return false;
         }
-        
+
         this.x += (dx / distance) * this.speed;
         this.y += (dy / distance) * this.speed;
         return true;
@@ -412,14 +412,14 @@ class Projectile {
     draw() {
         let color = '#f6ad55';
         let size = 3;
-        
+
         if (this.isCritical) {
             color = '#ff0000';
             size = 5;
         }
-        
+
         // 타입에 따른 색상과 크기
-        switch(this.type) {
+        switch (this.type) {
             case 'laser':
                 color = '#ff0000';
                 size = 4;
@@ -469,7 +469,7 @@ class Projectile {
                 ctx.fill();
                 return;
         }
-        
+
         ctx.fillStyle = color;
         ctx.beginPath();
         ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
@@ -490,7 +490,7 @@ function initGame() {
     gameState.wave = 1;
     gameState.isRunning = false;
     gameState.isPaused = false;
-    
+
     updateUI();
 }
 
@@ -498,11 +498,11 @@ function initGame() {
 function createWave() {
     const enemyCount = 2 + gameState.wave * 1.2;
     gameState.waveEnemies = [];
-    
+
     for (let i = 0; i < enemyCount; i++) {
         gameState.waveEnemies.push(new Enemy());
     }
-    
+
     // 3웨이브마다 보스 생성
     if (gameState.wave % 3 === 0) {
         gameState.waveEnemies.push(new Enemy(true));
@@ -512,60 +512,60 @@ function createWave() {
 // 게임 업데이트
 function updateGame(currentTime) {
     if (!gameState.isRunning || gameState.isPaused) return;
-    
+
     if (gameState.waveEnemies.length === 0 && gameState.enemies.length === 0) {
         gameState.waveTimer += 16;
         if (gameState.waveTimer > config.waveDelay) {
             gameState.wave++;
-            
+
             // 10웨이브마다 스테이지 클리어
             if (gameState.wave > 10) {
                 stageComplete();
                 return;
             }
-            
+
             createWave();
             gameState.waveTimer = 0;
         }
     }
-    
+
     if (gameState.waveEnemies.length > 0 && gameState.enemies.length < 3) {
         gameState.enemies.push(gameState.waveEnemies.shift());
     }
-    
+
     for (let i = gameState.enemies.length - 1; i >= 0; i--) {
         if (!gameState.enemies[i].update()) {
             gameState.enemies.splice(i, 1);
         }
     }
-    
+
     for (let tower of gameState.towers) {
         tower.update(gameState.enemies, currentTime);
     }
-    
+
     for (let i = gameState.projectiles.length - 1; i >= 0; i--) {
         if (!gameState.projectiles[i].update()) {
             gameState.projectiles.splice(i, 1);
         }
     }
-    
+
     if (gameState.lives <= 0) {
         gameOver();
     }
-    
+
     updateUI();
 }
 
 // 스테이지 완료
 function stageComplete() {
     gameState.isRunning = false;
-    
+
     // 점수를 코인으로 변환
     const earnedCoins = Math.floor(gameState.score / 10);
     gameState.coins += earnedCoins;
-    
+
     alert(`스테이지 ${gameState.stage} 클리어!\n획득한 코인: ${earnedCoins}개\n총 코인: ${gameState.coins}개`);
-    
+
     gameState.stage++;
     gameState.currentScreen = 'home';
     renderHomeScreen();
@@ -574,13 +574,13 @@ function stageComplete() {
 // 게임 오버
 function gameOver() {
     gameState.isRunning = false;
-    
+
     // 점수를 코인으로 변환
     const earnedCoins = Math.floor(gameState.score / 10);
     gameState.coins += earnedCoins;
-    
+
     alert(`게임 오버!\n최종 점수: ${gameState.score}\n획득한 코인: ${earnedCoins}개\n총 코인: ${gameState.coins}개`);
-    
+
     gameState.currentScreen = 'home';
     renderHomeScreen();
 }
@@ -588,7 +588,7 @@ function gameOver() {
 // 게임 렌더링
 function renderGame() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     // 경로 그리기
     ctx.strokeStyle = '#a0aec0';
     ctx.lineWidth = 40;
@@ -600,7 +600,7 @@ function renderGame() {
         ctx.lineTo(path[i].x, path[i].y);
     }
     ctx.stroke();
-    
+
     // 격자 그리기
     ctx.strokeStyle = '#e2e8f0';
     ctx.lineWidth = 1;
@@ -616,26 +616,26 @@ function renderGame() {
         ctx.lineTo(canvas.width, y);
         ctx.stroke();
     }
-    
+
     // 타워 그리기
     for (let tower of gameState.towers) {
         tower.draw();
     }
-    
+
     // 적 그리기
     for (let enemy of gameState.enemies) {
         enemy.draw();
     }
-    
+
     // 발사체 그리기
     for (let projectile of gameState.projectiles) {
         projectile.draw();
     }
-    
+
     // 게임 정보 표시 (화면 상단)
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
     ctx.fillRect(10, 10, 300, 120);
-    
+
     ctx.fillStyle = '#ffffff';
     ctx.font = '18px Arial';
     ctx.textAlign = 'left';
@@ -643,24 +643,24 @@ function renderGame() {
     ctx.fillText(`🌊 웨이브: ${gameState.wave}`, 20, 60);
     ctx.fillText(`🎯 점수: ${gameState.score}`, 20, 85);
     ctx.fillText(`❤️ 생명력: ${gameState.lives}`, 20, 110);
-    
+
     // 타워 종류별 버튼들
     const buttonWidth = 120;
     const buttonHeight = 35;
     const startX = canvas.width - 150;
     const startY = 20;
     const spacing = 45;
-    
+
     // 기본 타워 버튼 (항상 사용 가능)
-    const basicTowerCost = gameState.shopItems.find(item => item.id === 'tower_discount').owned > 0 ? 
+    const basicTowerCost = gameState.shopItems.find(item => item.id === 'tower_discount').owned > 0 ?
         config.towerCost * 0.8 : config.towerCost;
-    
+
     if (gameState.gold >= basicTowerCost) {
         drawButton('🏰 기본', startX, startY, buttonWidth, buttonHeight, '#4299e1');
     } else {
         drawButton('🏰 기본', startX, startY, buttonWidth, buttonHeight, '#a0aec0');
     }
-    
+
     // 레이저 타워 버튼
     const laserItem = gameState.shopItems.find(item => item.id === 'laser');
     if (laserItem.owned > 0) {
@@ -670,7 +670,7 @@ function renderGame() {
             drawButton('🔴 레이저', startX, startY + spacing, buttonWidth, buttonHeight, '#a0aec0');
         }
     }
-    
+
     // 미사일 타워 버튼
     const missileItem = gameState.shopItems.find(item => item.id === 'missile');
     if (missileItem.owned > 0) {
@@ -680,7 +680,7 @@ function renderGame() {
             drawButton('🚀 미사일', startX, startY + spacing * 2, buttonWidth, buttonHeight, '#a0aec0');
         }
     }
-    
+
     // 번개 타워 버튼
     const lightningItem = gameState.shopItems.find(item => item.id === 'lightning');
     if (lightningItem.owned > 0) {
@@ -690,7 +690,7 @@ function renderGame() {
             drawButton('⚡ 번개', startX, startY + spacing * 3, buttonWidth, buttonHeight, '#a0aec0');
         }
     }
-    
+
     // 얼음 타워 버튼
     const iceItem = gameState.shopItems.find(item => item.id === 'ice');
     if (iceItem.owned > 0) {
@@ -700,7 +700,7 @@ function renderGame() {
             drawButton('❄️ 얼음', startX, startY + spacing * 4, buttonWidth, buttonHeight, '#a0aec0');
         }
     }
-    
+
     // 화염 타워 버튼
     const fireItem = gameState.shopItems.find(item => item.id === 'fire');
     if (fireItem.owned > 0) {
@@ -710,7 +710,7 @@ function renderGame() {
             drawButton('🔥 화염', startX, startY + spacing * 5, buttonWidth, buttonHeight, '#a0aec0');
         }
     }
-    
+
     // 황금 타워 버튼
     const goldenItem = gameState.shopItems.find(item => item.id === 'golden_tower');
     if (goldenItem.owned > 0) {
@@ -720,7 +720,7 @@ function renderGame() {
             drawButton('👑 황금', startX, startY + spacing * 6, buttonWidth, buttonHeight, '#a0aec0');
         }
     }
-    
+
     // 무지개 타워 버튼
     const rainbowItem = gameState.shopItems.find(item => item.id === 'rainbow_shot');
     if (rainbowItem.owned > 0) {
@@ -730,14 +730,14 @@ function renderGame() {
             drawButton('🌈 무지개', startX, startY + spacing * 7, buttonWidth, buttonHeight, '#a0aec0');
         }
     }
-    
+
     // 드래그 중인 타워 표시
     if (gameState.isDragging && gameState.dragTower) {
         let towerColor = 'rgba(66, 153, 225, 0.5)';
         let towerEmoji = '🏰';
         let rangeColor = 'rgba(66, 153, 225, 0.3)';
-        
-        switch(gameState.selectedTowerType) {
+
+        switch (gameState.selectedTowerType) {
             case 'laser':
                 towerColor = 'rgba(255, 0, 0, 0.5)';
                 towerEmoji = '🔴';
@@ -778,15 +778,15 @@ function renderGame() {
                 towerEmoji = '🏰';
                 rangeColor = 'rgba(66, 153, 225, 0.3)';
         }
-        
+
         ctx.fillStyle = towerColor;
         ctx.fillRect(gameState.dragStartX - 15, gameState.dragStartY - 15, 30, 30);
-        
+
         ctx.fillStyle = '#2d3748';
         ctx.font = '20px Arial';
         ctx.textAlign = 'center';
         ctx.fillText(towerEmoji, gameState.dragStartX, gameState.dragStartY + 5);
-        
+
         // 범위 표시
         ctx.strokeStyle = rangeColor;
         ctx.lineWidth = 2;
@@ -799,43 +799,43 @@ function renderGame() {
 // 홈 화면 렌더링
 function renderHomeScreen() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     // 배경
     ctx.fillStyle = '#f7fafc';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
+
     // 제목
     ctx.fillStyle = '#4a5568';
     ctx.font = '48px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('🏰 타워 디펜스', canvas.width/2, 100);
-    
+    ctx.fillText('🏰 타워 디펜스', canvas.width / 2, 100);
+
     // 스테이지 정보
     ctx.font = '24px Arial';
-    ctx.fillText(`스테이지 ${gameState.stage}`, canvas.width/2, 160);
-    ctx.fillText(`보유 코인: ${gameState.coins}개`, canvas.width/2, 200);
-    
+    ctx.fillText(`스테이지 ${gameState.stage}`, canvas.width / 2, 160);
+    ctx.fillText(`보유 코인: ${gameState.coins}개`, canvas.width / 2, 200);
+
     // 버튼들
-    drawButton('전투 시작', canvas.width/2 - 150, 300, 120, 50, '#4299e1');
-    drawButton('상점', canvas.width/2 + 30, 300, 120, 50, '#48bb78');
+    drawButton('전투 시작', canvas.width / 2 - 150, 300, 120, 50, '#4299e1');
+    drawButton('상점', canvas.width / 2 + 30, 300, 120, 50, '#48bb78');
 }
 
 // 상점 화면 렌더링
 function renderShopScreen() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+
     // 배경
     ctx.fillStyle = '#f7fafc';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
+
     // 제목
     ctx.fillStyle = '#4a5568';
     ctx.font = '36px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('🛒 상점', canvas.width/2, 60);
+    ctx.fillText('🛒 상점', canvas.width / 2, 60);
     ctx.font = '20px Arial';
-    ctx.fillText(`보유 코인: ${gameState.coins}개`, canvas.width/2, 90);
-    
+    ctx.fillText(`보유 코인: ${gameState.coins}개`, canvas.width / 2, 90);
+
     // 아이템들 (스크롤 가능한 레이아웃)
     const itemsPerRow = 3;
     const itemWidth = 240;
@@ -843,46 +843,46 @@ function renderShopScreen() {
     const startX = 20;
     const startY = 150;
     const scrollOffset = Math.max(0, Math.min(gameState.shopScroll || 0, (gameState.shopItems.length / itemsPerRow) * (itemHeight + 20) - 400));
-    
+
     // 아이템 그리기
     gameState.shopItems.forEach((item, index) => {
         const row = Math.floor(index / itemsPerRow);
         const col = index % itemsPerRow;
         const x = startX + col * (itemWidth + 10);
         const y = startY + row * (itemHeight + 10) - scrollOffset;
-        
+
         // 화면 밖에 있는 아이템은 그리지 않음
         if (y < startY - itemHeight || y > canvas.height) return;
-        
+
         // 아이템 박스
         ctx.fillStyle = '#ffffff';
         ctx.strokeStyle = '#e2e8f0';
         ctx.lineWidth = 2;
         ctx.fillRect(x, y, itemWidth, itemHeight);
         ctx.strokeRect(x, y, itemWidth, itemHeight);
-        
+
         // 아이템 정보
         ctx.fillStyle = '#2d3748';
         ctx.font = '16px Arial';
         ctx.textAlign = 'left';
         ctx.fillText(item.name, x + 10, y + 25);
-        
+
         ctx.font = '12px Arial';
         ctx.fillStyle = '#718096';
         ctx.fillText(item.effect, x + 10, y + 45);
         ctx.fillText(`보유: ${item.owned}개`, x + 10, y + 60);
-        
+
         // 가격
         ctx.fillStyle = '#f6ad55';
         ctx.font = '14px Arial';
         ctx.textAlign = 'right';
         ctx.fillText(`${item.cost} 코인`, x + itemWidth - 10, y + 25);
-        
+
         // 구매 버튼
         const canAfford = gameState.coins >= item.cost;
         drawButton('구매', x + itemWidth - 60, y + itemHeight - 25, 50, 20, canAfford ? '#4299e1' : '#a0aec0');
     });
-    
+
     // 스크롤 버튼들
     if (scrollOffset > 0) {
         drawButton('▲', canvas.width - 50, 150, 40, 30, '#4299e1');
@@ -890,7 +890,7 @@ function renderShopScreen() {
     if (scrollOffset < (gameState.shopItems.length / itemsPerRow) * (itemHeight + 20) - 400) {
         drawButton('▼', canvas.width - 50, canvas.height - 80, 40, 30, '#4299e1');
     }
-    
+
     // 뒤로가기 버튼
     drawButton('뒤로가기', 50, 50, 100, 40, '#e53e3e');
 }
@@ -899,11 +899,11 @@ function renderShopScreen() {
 function drawButton(text, x, y, width, height, color) {
     ctx.fillStyle = color;
     ctx.fillRect(x, y, width, height);
-    
+
     ctx.fillStyle = '#ffffff';
     ctx.font = '16px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText(text, x + width/2, y + height/2 + 5);
+    ctx.fillText(text, x + width / 2, y + height / 2 + 5);
 }
 
 // UI 업데이트
@@ -933,25 +933,33 @@ function gameLoop(currentTime) {
 canvas.addEventListener('click', (e) => {
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;`n    `n    // 캔버스 스케일 고려한 좌표 변환 (모바일 대응)`n    const scaleX = canvas.width / rect.width;`n    const scaleY = canvas.height / rect.height;`n    const canvasX = x * scaleX;`n    const canvasY = y * scaleY;
-    
-    if (gameState.currentScreen === 'home') {`n        // 전투 시작 버튼`n        if (canvascanvasX \u003e canvas.width/2 - 150 && canvasX \u003c canvas.width/2 - 30 && canvasY \u003e 300 && canvasY \u003c 350) {
+    const y = e.clientY - rect.top;
+
+    // 캔버스 스케일 고려한 좌표 변환 (모바일 대응)
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const canvasX = x * scaleX;
+    const canvasY = y * scaleY;
+
+    if (gameState.currentScreen === 'home') {
+        // 전투 시작 버튼
+        if (canvasX > canvas.width / 2 - 150 && canvasX < canvas.width / 2 - 30 && canvasY > 300 && canvasY < 350) {
             gameState.currentScreen = 'game';
             initGame();
             gameState.isRunning = true;
             createWave();
         }
         // 상점 버튼
-        else if (canvasX \u003e canvas.width/2 + 30 && canvasX \u003c canvas.width/2 + 150 && canvasY \u003e 300 && canvasY \u003c 350)) {
+        else if (canvasX > canvas.width / 2 + 30 && canvasX < canvas.width / 2 + 150 && canvasY > 300 && canvasY < 350) {
             gameState.currentScreen = 'shop';
         }
     }
     else if (gameState.currentScreen === 'shop') {
         // 뒤로가기 버튼
-        if (x > 50 && x < 150 && y > 50 && y < 90) {
+        if (canvasX > 50 && canvasX < 150 && canvasY > 50 && canvasY < 90) {
             gameState.currentScreen = 'home';
         }
-        
+
         // 스크롤 버튼들
         if (x > canvas.width - 50 && x < canvas.width - 10) {
             if (y > 150 && y < 180) { // 위로 스크롤
@@ -960,7 +968,7 @@ canvas.addEventListener('click', (e) => {
                 gameState.shopScroll = Math.min((gameState.shopItems.length / 3) * 110 - 400, (gameState.shopScroll || 0) + 50);
             }
         }
-        
+
         // 아이템 구매
         const itemsPerRow = 3;
         const itemWidth = 240;
@@ -968,18 +976,18 @@ canvas.addEventListener('click', (e) => {
         const startX = 20;
         const startY = 150;
         const scrollOffset = Math.max(0, Math.min(gameState.shopScroll || 0, (gameState.shopItems.length / itemsPerRow) * (itemHeight + 20) - 400));
-        
+
         gameState.shopItems.forEach((item, index) => {
             const row = Math.floor(index / itemsPerRow);
             const col = index % itemsPerRow;
             const itemX = startX + col * (itemWidth + 10);
             const itemY = startY + row * (itemHeight + 10) - scrollOffset;
-            
+
             // 화면 밖에 있는 아이템은 클릭 불가
             if (itemY < startY - itemHeight || itemY > canvas.height) return;
-            
+
             // 구매 버튼 클릭
-            if (x > itemX + itemWidth - 60 && x < itemX + itemWidth - 10 && 
+            if (x > itemX + itemWidth - 60 && x < itemX + itemWidth - 10 &&
                 y > itemY + itemHeight - 25 && y < itemY + itemHeight - 5) {
                 if (gameState.coins >= item.cost) {
                     gameState.coins -= item.cost;
@@ -988,34 +996,34 @@ canvas.addEventListener('click', (e) => {
                 } else {
                     alert('코인이 부족합니다!');
                 }
-                }
-});
+            }
+        });
 
-// 마우스 이동 이벤트 (드래그 중 타워 위치 업데이트)
-canvas.addEventListener('mousemove', (e) => {
-    if (gameState.isDragging && gameState.dragTower) {
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
-        gameState.dragStartX = x;
-        gameState.dragStartY = y;
-    }
-});
+        // 마우스 이동 이벤트 (드래그 중 타워 위치 업데이트)
+        canvas.addEventListener('mousemove', (e) => {
+            if (gameState.isDragging && gameState.dragTower) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
 
-// 마우스 우클릭 이벤트 (드래그 취소)
-canvas.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    if (gameState.isDragging && gameState.dragTower) {
-        const towerCost = gameState.shopItems.find(item => item.id === 'tower_discount').owned > 0 ? 
-            config.towerCost * 0.8 : config.towerCost;
-        gameState.gold += towerCost;
-        gameState.isDragging = false;
-        gameState.dragTower = null;
-        gameState.selectedTowerType = 'basic';
-        updateUI();
-    }
-});
+                gameState.dragStartX = x;
+                gameState.dragStartY = y;
+            }
+        });
+
+        // 마우스 우클릭 이벤트 (드래그 취소)
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            if (gameState.isDragging && gameState.dragTower) {
+                const towerCost = gameState.shopItems.find(item => item.id === 'tower_discount').owned > 0 ?
+                    config.towerCost * 0.8 : config.towerCost;
+                gameState.gold += towerCost;
+                gameState.isDragging = false;
+                gameState.dragTower = null;
+                gameState.selectedTowerType = 'basic';
+                updateUI();
+            }
+        });
     }
     else if (gameState.currentScreen === 'game' && gameState.isRunning && !gameState.isPaused) {
         // 타워 버튼들 클릭 처리
@@ -1024,9 +1032,9 @@ canvas.addEventListener('contextmenu', (e) => {
         const startX = canvas.width - 150;
         const startY = 20;
         const spacing = 45;
-        const basicTowerCost = gameState.shopItems.find(item => item.id === 'tower_discount').owned > 0 ? 
+        const basicTowerCost = gameState.shopItems.find(item => item.id === 'tower_discount').owned > 0 ?
             config.towerCost * 0.8 : config.towerCost;
-        
+
         // 기본 타워 버튼
         if (x > startX && x < startX + buttonWidth && y > startY && y < startY + buttonHeight) {
             if (gameState.gold >= basicTowerCost) {
@@ -1134,7 +1142,7 @@ canvas.addEventListener('contextmenu', (e) => {
         else if (gameState.isDragging && gameState.dragTower) {
             const gridX = Math.floor(x / config.gridSize) * config.gridSize + config.gridSize / 2;
             const gridY = Math.floor(y / config.gridSize) * config.gridSize + config.gridSize / 2;
-            
+
             let onPath = false;
             for (let i = 0; i < path.length - 1; i++) {
                 const p1 = path[i];
@@ -1145,7 +1153,7 @@ canvas.addEventListener('contextmenu', (e) => {
                     break;
                 }
             }
-            
+
             if (!onPath) {
                 let canPlace = true;
                 for (let tower of gameState.towers) {
@@ -1157,7 +1165,7 @@ canvas.addEventListener('contextmenu', (e) => {
                         break;
                     }
                 }
-                
+
                 if (canPlace) {
                     // 선택된 타워 타입으로 타워 생성
                     const tower = new Tower(gridX, gridY);
@@ -1168,7 +1176,7 @@ canvas.addEventListener('contextmenu', (e) => {
                     updateUI();
                 } else {
                     // 타워를 놓을 수 없는 위치면 골드 환불
-                    const towerCost = gameState.shopItems.find(item => item.id === 'tower_discount').owned > 0 ? 
+                    const towerCost = gameState.shopItems.find(item => item.id === 'tower_discount').owned > 0 ?
                         config.towerCost * 0.8 : config.towerCost;
                     gameState.gold += towerCost;
                     gameState.isDragging = false;
@@ -1177,7 +1185,7 @@ canvas.addEventListener('contextmenu', (e) => {
                 }
             } else {
                 // 경로 위에 놓으려고 하면 골드 환불
-                const towerCost = gameState.shopItems.find(item => item.id === 'tower_discount').owned > 0 ? 
+                const towerCost = gameState.shopItems.find(item => item.id === 'tower_discount').owned > 0 ?
                     config.towerCost * 0.8 : config.towerCost;
                 gameState.gold += towerCost;
                 gameState.isDragging = false;
@@ -1194,15 +1202,15 @@ function distanceToLine(px, py, x1, y1, x2, y2) {
     const B = py - y1;
     const C = x2 - x1;
     const D = y2 - y1;
-    
+
     const dot = A * C + B * D;
     const lenSq = C * C + D * D;
     let param = -1;
-    
+
     if (lenSq !== 0) param = dot / lenSq;
-    
+
     let xx, yy;
-    
+
     if (param < 0) {
         xx = x1;
         yy = y1;
@@ -1213,7 +1221,7 @@ function distanceToLine(px, py, x1, y1, x2, y2) {
         xx = x1 + param * C;
         yy = y1 + param * D;
     }
-    
+
     const dx = px - xx;
     const dy = py - yy;
     return Math.sqrt(dx * dx + dy * dy);
@@ -1232,7 +1240,7 @@ document.getElementById('startBtn').addEventListener('click', () => {
 document.getElementById('pauseBtn').addEventListener('click', () => {
     if (gameState.currentScreen === 'game' && gameState.isRunning) {
         gameState.isPaused = !gameState.isPaused;
-        document.getElementById('pauseBtn').textContent = 
+        document.getElementById('pauseBtn').textContent =
             gameState.isPaused ? '계속하기' : '일시정지';
     }
 });
