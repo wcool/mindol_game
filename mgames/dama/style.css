@@ -644,16 +644,239 @@ body {
 }
 
 /* Responsive */
-@media (max-width: 480px) {
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
     .game-device {
         padding: 20px;
+        max-width: 100%;
+    }
+
+    .game-screen {
+        min-height: 400px;
+        padding: 15px;
     }
 
     #tamagotchiSprite {
         font-size: 6em;
+        width: 120px;
+        height: 120px;
+    }
+
+    .controls {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .btn-control {
+        padding: 12px 8px;
+        min-height: 70px;
+    }
+
+    .btn-icon {
+        font-size: 1.6em;
+    }
+
+    .btn-label {
+        font-size: 0.75em;
+    }
+
+    .food-grid {
+        gap: 8px;
+    }
+
+    .food-btn {
+        padding: 12px;
+        font-size: 1em;
+        min-height: 50px;
+    }
+
+    .shop-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+
+    .modal-content {
+        padding: 30px 20px;
+        width: 90%;
+    }
+
+    .modal-content h1 {
+        font-size: 2.5em;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 5px;
+    }
+
+    .game-device {
+        padding: 15px;
+        border-radius: 30px;
+    }
+
+    .game-header {
+        padding: 8px 15px;
+    }
+
+    .coin-display {
+        font-size: 1.2em;
+    }
+
+    .game-screen {
+        min-height: 350px;
+        padding: 12px;
+    }
+
+    #tamagotchiSprite {
+        font-size: 5em;
+        width: 100px;
+        height: 100px;
+    }
+
+    .tamagotchi-container {
+        min-height: 200px;
     }
 
     .controls {
         grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+    }
+
+    .btn-control {
+        padding: 14px 10px;
+        min-height: 75px;
+    }
+
+    .btn-icon {
+        font-size: 1.8em;
+    }
+
+    .btn-label {
+        font-size: 0.8em;
+    }
+
+    .btn-primary {
+        padding: 14px 30px;
+        font-size: 1.1em;
+    }
+
+    .btn-secondary {
+        padding: 12px 25px;
+        font-size: 0.95em;
+    }
+
+    #feedScreen h2,
+    #healthScreen h2,
+    #shopScreen h2 {
+        font-size: 1.5em;
+    }
+
+    .food-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .food-btn {
+        padding: 14px;
+        font-size: 1.1em;
+        min-height: 55px;
+    }
+
+    .shop-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        max-height: 300px;
+    }
+
+    .shop-item {
+        padding: 12px;
+    }
+
+    .shop-item-icon {
+        font-size: 2.2em;
+    }
+
+    #gameCanvas {
+        max-width: 100%;
+        height: auto;
+    }
+
+    .game-instructions {
+        font-size: 0.95em;
+    }
+
+    .modal-content {
+        padding: 25px 15px;
+        width: 95%;
+    }
+
+    .modal-content h1 {
+        font-size: 2em;
+    }
+
+    .modal-content p {
+        font-size: 1em;
+    }
+
+    #nameInput {
+        padding: 12px 15px;
+        font-size: 1.1em;
+    }
+
+    .status-bar {
+        gap: 10px;
+    }
+
+    .status-icon {
+        font-size: 1.3em;
+    }
+
+    .info-display {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+}
+
+/* 터치 디바이스 최적화 */
+@media (hover: none) and (pointer: coarse) {
+
+    .btn-control,
+    .btn-primary,
+    .btn-secondary,
+    .food-btn,
+    .shop-buy-btn {
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+        touch-action: manipulation;
+    }
+
+    .btn-control:active {
+        transform: translateY(0);
+    }
+
+    .btn-primary:active,
+    .btn-secondary:active {
+        transform: translateY(0);
+    }
+
+    .food-btn:active {
+        transform: scale(1);
+    }
+
+    /* 터치 타겟 크기 확대 */
+    .btn-control {
+        min-height: 80px;
+    }
+
+    .food-btn {
+        min-height: 60px;
+    }
+
+    .shop-buy-btn {
+        min-height: 44px;
     }
 }

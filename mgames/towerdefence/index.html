@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,39 +16,46 @@
             align-items: center;
             min-height: 100vh;
         }
-        
+
         .game-container {
             background: white;
             border-radius: 20px;
             padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             text-align: center;
+            max-width: 100%;
         }
-        
+
         h1 {
             color: #4a5568;
             margin-bottom: 20px;
             font-size: 2.5em;
         }
-        
+
         canvas {
             border: 3px solid #4a5568;
             border-radius: 10px;
             background: #f7fafc;
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
         }
-        
+
         .game-info {
             display: flex;
             justify-content: space-between;
             margin: 20px 0;
             font-size: 1.2em;
             font-weight: bold;
+            flex-wrap: wrap;
+            gap: 10px;
         }
-        
+
         .controls {
             margin: 20px 0;
         }
-        
+
         button {
             background: #4299e1;
             color: white;
@@ -58,47 +66,138 @@
             font-size: 1.1em;
             cursor: pointer;
             transition: all 0.3s;
+            min-height: 44px;
         }
-        
+
         button:hover {
             background: #3182ce;
             transform: translateY(-2px);
         }
-        
+
         button:disabled {
             background: #a0aec0;
             cursor: not-allowed;
         }
-        
+
         .game-info {
-            display: none; /* 홈 화면에서는 숨김 */
+            display: none;
+            /* 홈 화면에서는 숨김 */
         }
-        
+
         .controls {
-            display: none; /* 홈 화면에서는 숨김 */
+            display: none;
+            /* 홈 화면에서는 숨김 */
+        }
+
+        /* 모바일 반응형 디자인 */
+        @media (max-width: 1024px) {
+            canvas {
+                width: 100% !important;
+                height: auto !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .game-container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            canvas {
+                width: 100% !important;
+                height: auto !important;
+            }
+
+            .game-info {
+                font-size: 1em;
+                justify-content: center;
+            }
+
+            button {
+                padding: 14px 20px;
+                font-size: 1em;
+                margin: 3px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .game-container {
+                padding: 10px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+                margin-bottom: 15px;
+            }
+
+            canvas {
+                width: 100% !important;
+                height: auto !important;
+                border-width: 2px;
+            }
+
+            .game-info {
+                font-size: 0.9em;
+                gap: 5px;
+            }
+
+            button {
+                padding: 12px 16px;
+                font-size: 0.9em;
+                width: 100%;
+                max-width: 200px;
+            }
+
+            .controls {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 5px;
+            }
+        }
+
+        /* 터치 디바이스 최적화 */
+        @media (hover: none) and (pointer: coarse) {
+            button {
+                -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+                touch-action: manipulation;
+                min-height: 48px;
+            }
+
+            button:active {
+                transform: translateY(0);
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="game-container">
         <h1>🏰 타워 디펜스 게임 🏰</h1>
-        
+
         <div class="game-info" id="gameInfo">
             <div>💰 골드: <span id="gold">100</span></div>
             <div>❤️ 생명력: <span id="lives">10</span></div>
             <div>🎯 점수: <span id="score">0</span></div>
             <div>🌊 웨이브: <span id="wave">1</span></div>
         </div>
-        
+
         <canvas id="gameCanvas" width="800" height="600"></canvas>
-        
+
         <div class="controls" id="gameControls">
             <button id="startBtn">게임 시작</button>
             <button id="pauseBtn">일시정지</button>
             <button id="restartBtn">다시 시작</button>
         </div>
     </div>
-    
+
     <script src="game.js"></script>
     <script>
         // 화면 전환 시 UI 표시/숨김 처리
@@ -106,15 +205,15 @@
             document.getElementById('gameInfo').style.display = 'flex';
             document.getElementById('gameControls').style.display = 'block';
         }
-        
+
         function hideGameUI() {
             document.getElementById('gameInfo').style.display = 'none';
             document.getElementById('gameControls').style.display = 'none';
         }
-        
+
         // 게임 상태 변경 시 UI 업데이트
         const originalUpdateUI = window.updateUI;
-        window.updateUI = function() {
+        window.updateUI = function () {
             if (window.gameState && window.gameState.currentScreen === 'game') {
                 showGameUI();
             } else {
@@ -123,4 +222,5 @@
         };
     </script>
 </body>
-</html> 
+
+</html>

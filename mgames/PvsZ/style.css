@@ -140,8 +140,15 @@ body {
 }
 
 @keyframes danger-pulse {
-    0%, 100% { opacity: 0.7; }
-    50% { opacity: 1; }
+
+    0%,
+    100% {
+        opacity: 0.7;
+    }
+
+    50% {
+        opacity: 1;
+    }
 }
 
 .grid-cell:hover {
@@ -178,8 +185,15 @@ body {
 }
 
 @keyframes zombie-walk {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
 }
 
 .pea {
@@ -206,14 +220,22 @@ body {
     from {
         top: -50px;
     }
+
     to {
         top: 100%;
     }
 }
 
 @keyframes sun-rotate {
-    0%, 100% { transform: rotate(0deg); }
-    50% { transform: rotate(180deg); }
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    50% {
+        transform: rotate(180deg);
+    }
 }
 
 .game-status {
@@ -243,8 +265,15 @@ body {
 }
 
 @keyframes boss-pulse {
-    0%, 100% { transform: translate(-50%, -50%) scale(1); }
-    50% { transform: translate(-50%, -50%) scale(1.1); }
+
+    0%,
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    50% {
+        transform: translate(-50%, -50%) scale(1.1);
+    }
 }
 
 .boss-alert {
@@ -265,8 +294,15 @@ body {
 }
 
 @keyframes alert-pulse {
-    0%, 100% { transform: translate(-50%, -50%) scale(1); }
-    50% { transform: translate(-50%, -50%) scale(1.1); }
+
+    0%,
+    100% {
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    50% {
+        transform: translate(-50%, -50%) scale(1.1);
+    }
 }
 
 .health-bar {
@@ -320,3 +356,220 @@ body {
     flex-wrap: nowrap;
 }
 
+/* 모바일 반응형 디자인 */
+@media (max-width: 1024px) {
+    .game-container {
+        padding: 15px;
+    }
+
+    .game-board {
+        grid-template-columns: repeat(9, 1fr);
+        min-height: 400px;
+        gap: 1px;
+    }
+
+    .plant-card {
+        min-width: 100px;
+        padding: 12px;
+    }
+
+    .plant-icon {
+        font-size: 40px;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .game-container {
+        padding: 10px;
+    }
+
+    .game-header {
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .game-info {
+        flex-wrap: wrap;
+        gap: 10px;
+        font-size: 14px;
+    }
+
+    .sun-counter {
+        font-size: 20px;
+    }
+
+    .sun-icon {
+        font-size: 28px;
+    }
+
+    .plant-selector {
+        gap: 8px;
+        padding: 10px;
+        max-height: 150px;
+        overflow-y: auto;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .plant-card {
+        min-width: 80px;
+        padding: 10px;
+    }
+
+    .plant-icon {
+        font-size: 32px;
+        margin-bottom: 5px;
+    }
+
+    .plant-name {
+        font-size: 12px;
+    }
+
+    .plant-cost {
+        font-size: 12px;
+    }
+
+    .game-board {
+        grid-template-columns: repeat(9, 1fr);
+        min-height: 350px;
+        gap: 1px;
+        padding: 5px;
+    }
+
+    .grid-cell {
+        font-size: 28px;
+        min-height: 40px;
+    }
+
+    .plant {
+        font-size: 32px;
+    }
+
+    .zombie {
+        font-size: 32px;
+    }
+
+    .pea {
+        width: 15px;
+        height: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .game-container {
+        padding: 5px;
+    }
+
+    .game-header {
+        padding: 8px;
+    }
+
+    .sun-counter {
+        font-size: 18px;
+    }
+
+    .sun-icon {
+        font-size: 24px;
+    }
+
+    .game-info {
+        font-size: 12px;
+        gap: 8px;
+    }
+
+    .plant-selector {
+        gap: 5px;
+        padding: 8px;
+        max-height: 120px;
+    }
+
+    .plant-card {
+        min-width: 70px;
+        padding: 8px;
+    }
+
+    .plant-icon {
+        font-size: 28px;
+    }
+
+    .plant-name {
+        font-size: 10px;
+    }
+
+    .plant-cost {
+        font-size: 10px;
+    }
+
+    .game-board {
+        grid-template-columns: repeat(9, 1fr);
+        min-height: 280px;
+        gap: 1px;
+        padding: 3px;
+    }
+
+    .grid-cell {
+        font-size: 20px;
+        min-height: 30px;
+    }
+
+    .plant {
+        font-size: 24px;
+    }
+
+    .zombie {
+        font-size: 24px;
+    }
+
+    .pea {
+        width: 12px;
+        height: 12px;
+    }
+
+    .sun {
+        font-size: 24px;
+    }
+
+    .game-status {
+        font-size: 18px;
+        padding: 10px;
+    }
+
+    .boss-alert {
+        font-size: 20px;
+        padding: 20px 30px;
+    }
+}
+
+/* 터치 디바이스 최적화 */
+@media (hover: none) and (pointer: coarse) {
+
+    .plant-card,
+    .grid-cell,
+    .sun {
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+        touch-action: manipulation;
+    }
+
+    .plant-card:active {
+        transform: translateY(-2px);
+    }
+
+    .grid-cell:active {
+        transform: scale(0.95);
+    }
+
+    /* 터치 타겟 크기 확대 */
+    .plant-card {
+        min-width: 90px;
+        min-height: 90px;
+    }
+
+    .grid-cell {
+        min-height: 50px;
+    }
+}
