@@ -48,13 +48,13 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 });
 
 // Mock Launch Game Logic
-document.querySelectorAll('.btn-small, .btn-play').forEach(btn => {
+document.querySelectorAll('.btn-small, .btn-play-link').forEach(btn => {
     btn.addEventListener('click', (e) => {
         if (e.target.tagName === 'A' && e.target.getAttribute('href') === '#') {
             e.preventDefault();
             alert('민돌이의 게임이 아직 준비 중입니다! 실제 게임 파일이 준비되면 여기에 연결해 주세요.');
         } else if (e.target.tagName === 'BUTTON') {
-             alert('민돌이의 메인 게임 "Neon Voyager"가 곧 출시됩니다!');
+            alert('민돌이의 메인 게임 "Neon Voyager"가 곧 출시됩니다!');
         }
     });
 });
