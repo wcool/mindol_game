@@ -1,4 +1,4 @@
-* {
+﻿* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -725,12 +725,7 @@ body {
         max-width: 100%;
     }
 
-    .garden-slot {
-        width: 100%;
-        height: 0;
-        padding-bottom: 100%;
-        min-height: unset;
-    }
+    .garden-slot {`n        aspect-ratio: 1;`n        min-height: 80px;`n        max-height: 120px;`n    }
 
     .slot-content {
         font-size: 2rem;
