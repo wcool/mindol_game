@@ -1036,112 +1036,112 @@ canvas.addEventListener('click', (e) => {
             config.towerCost * 0.8 : config.towerCost;
 
         // 기본 타워 버튼
-        if (x > startX && x < startX + buttonWidth && y > startY && y < startY + buttonHeight) {
+        if (canvasX > startX && canvasX < startX + buttonWidth && canvasY > startY && canvasY < startY + buttonHeight) {
             if (gameState.gold >= basicTowerCost) {
                 gameState.selectedTowerType = 'basic';
                 gameState.isDragging = true;
-                gameState.dragTower = { x: x, y: y };
-                gameState.dragStartX = x;
-                gameState.dragStartY = y;
+                gameState.dragTower = { x: canvasX, y: canvasY };
+                gameState.dragStartX = canvasX;
+                gameState.dragStartY = canvasY;
                 gameState.gold -= basicTowerCost;
                 updateUI();
             }
         }
         // 레이저 타워 버튼
-        else if (x > startX && x < startX + buttonWidth && y > startY + spacing && y < startY + spacing + buttonHeight) {
+        else if (canvasX > startX && canvasX < startX + buttonWidth && canvasY > startY + spacing && canvasY < startY + spacing + buttonHeight) {
             const laserItem = gameState.shopItems.find(item => item.id === 'laser');
             if (laserItem.owned > 0 && gameState.gold >= basicTowerCost) {
                 gameState.selectedTowerType = 'laser';
                 gameState.isDragging = true;
-                gameState.dragTower = { x: x, y: y };
-                gameState.dragStartX = x;
-                gameState.dragStartY = y;
+                gameState.dragTower = { x: canvasX, y: canvasY };
+                gameState.dragStartX = canvasX;
+                gameState.dragStartY = canvasY;
                 gameState.gold -= basicTowerCost;
                 updateUI();
             }
         }
         // 미사일 타워 버튼
-        else if (x > startX && x < startX + buttonWidth && y > startY + spacing * 2 && y < startY + spacing * 2 + buttonHeight) {
+        else if (canvasX > startX && canvasX < startX + buttonWidth && canvasY > startY + spacing * 2 && canvasY < startY + spacing * 2 + buttonHeight) {
             const missileItem = gameState.shopItems.find(item => item.id === 'missile');
             if (missileItem.owned > 0 && gameState.gold >= basicTowerCost) {
                 gameState.selectedTowerType = 'missile';
                 gameState.isDragging = true;
-                gameState.dragTower = { x: x, y: y };
-                gameState.dragStartX = x;
-                gameState.dragStartY = y;
+                gameState.dragTower = { x: canvasX, y: canvasY };
+                gameState.dragStartX = canvasX;
+                gameState.dragStartY = canvasY;
                 gameState.gold -= basicTowerCost;
                 updateUI();
             }
         }
         // 번개 타워 버튼
-        else if (x > startX && x < startX + buttonWidth && y > startY + spacing * 3 && y < startY + spacing * 3 + buttonHeight) {
+        else if (canvasX > startX && canvasX < startX + buttonWidth && canvasY > startY + spacing * 3 && canvasY < startY + spacing * 3 + buttonHeight) {
             const lightningItem = gameState.shopItems.find(item => item.id === 'lightning');
             if (lightningItem.owned > 0 && gameState.gold >= basicTowerCost) {
                 gameState.selectedTowerType = 'lightning';
                 gameState.isDragging = true;
-                gameState.dragTower = { x: x, y: y };
-                gameState.dragStartX = x;
-                gameState.dragStartY = y;
+                gameState.dragTower = { x: canvasX, y: canvasY };
+                gameState.dragStartX = canvasX;
+                gameState.dragStartY = canvasY;
                 gameState.gold -= basicTowerCost;
                 updateUI();
             }
         }
         // 얼음 타워 버튼
-        else if (x > startX && x < startX + buttonWidth && y > startY + spacing * 4 && y < startY + spacing * 4 + buttonHeight) {
+        else if (canvasX > startX && canvasX < startX + buttonWidth && canvasY > startY + spacing * 4 && canvasY < startY + spacing * 4 + buttonHeight) {
             const iceItem = gameState.shopItems.find(item => item.id === 'ice');
             if (iceItem.owned > 0 && gameState.gold >= basicTowerCost) {
                 gameState.selectedTowerType = 'ice';
                 gameState.isDragging = true;
-                gameState.dragTower = { x: x, y: y };
-                gameState.dragStartX = x;
-                gameState.dragStartY = y;
+                gameState.dragTower = { x: canvasX, y: canvasY };
+                gameState.dragStartX = canvasX;
+                gameState.dragStartY = canvasY;
                 gameState.gold -= basicTowerCost;
                 updateUI();
             }
         }
         // 화염 타워 버튼
-        else if (x > startX && x < startX + buttonWidth && y > startY + spacing * 5 && y < startY + spacing * 5 + buttonHeight) {
+        else if (canvasX > startX && canvasX < startX + buttonWidth && canvasY > startY + spacing * 5 && canvasY < startY + spacing * 5 + buttonHeight) {
             const fireItem = gameState.shopItems.find(item => item.id === 'fire');
             if (fireItem.owned > 0 && gameState.gold >= basicTowerCost) {
                 gameState.selectedTowerType = 'fire';
                 gameState.isDragging = true;
-                gameState.dragTower = { x: x, y: y };
-                gameState.dragStartX = x;
-                gameState.dragStartY = y;
+                gameState.dragTower = { x: canvasX, y: canvasY };
+                gameState.dragStartX = canvasX;
+                gameState.dragStartY = canvasY;
                 gameState.gold -= basicTowerCost;
                 updateUI();
             }
         }
         // 황금 타워 버튼
-        else if (x > startX && x < startX + buttonWidth && y > startY + spacing * 6 && y < startY + spacing * 6 + buttonHeight) {
+        else if (canvasX > startX && canvasX < startX + buttonWidth && canvasY > startY + spacing * 6 && canvasY < startY + spacing * 6 + buttonHeight) {
             const goldenItem = gameState.shopItems.find(item => item.id === 'golden_tower');
             if (goldenItem.owned > 0 && gameState.gold >= basicTowerCost) {
                 gameState.selectedTowerType = 'golden';
                 gameState.isDragging = true;
-                gameState.dragTower = { x: x, y: y };
-                gameState.dragStartX = x;
-                gameState.dragStartY = y;
+                gameState.dragTower = { x: canvasX, y: canvasY };
+                gameState.dragStartX = canvasX;
+                gameState.dragStartY = canvasY;
                 gameState.gold -= basicTowerCost;
                 updateUI();
             }
         }
         // 무지개 타워 버튼
-        else if (x > startX && x < startX + buttonWidth && y > startY + spacing * 7 && y < startY + spacing * 7 + buttonHeight) {
+        else if (canvasX > startX && canvasX < startX + buttonWidth && canvasY > startY + spacing * 7 && canvasY < startY + spacing * 7 + buttonHeight) {
             const rainbowItem = gameState.shopItems.find(item => item.id === 'rainbow_shot');
             if (rainbowItem.owned > 0 && gameState.gold >= basicTowerCost) {
                 gameState.selectedTowerType = 'rainbow';
                 gameState.isDragging = true;
-                gameState.dragTower = { x: x, y: y };
-                gameState.dragStartX = x;
-                gameState.dragStartY = y;
+                gameState.dragTower = { x: canvasX, y: canvasY };
+                gameState.dragStartX = canvasX;
+                gameState.dragStartY = canvasY;
                 gameState.gold -= basicTowerCost;
                 updateUI();
             }
         }
         // 드래그 중인 타워 놓기
         else if (gameState.isDragging && gameState.dragTower) {
-            const gridX = Math.floor(x / config.gridSize) * config.gridSize + config.gridSize / 2;
-            const gridY = Math.floor(y / config.gridSize) * config.gridSize + config.gridSize / 2;
+            const gridX = Math.floor(canvasX / config.gridSize) * config.gridSize + config.gridSize / 2;
+            const gridY = Math.floor(canvasY / config.gridSize) * config.gridSize + config.gridSize / 2;
 
             let onPath = false;
             for (let i = 0; i < path.length - 1; i++) {
