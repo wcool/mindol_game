@@ -1227,33 +1227,6 @@ function distanceToLine(px, py, x1, y1, x2, y2) {
     return Math.sqrt(dx * dx + dy * dy);
 }
 
-// 버튼 이벤트
-document.getElementById('startBtn').addEventListener('click', () => {
-    if (gameState.currentScreen === 'game' && !gameState.isRunning) {
-        gameState.isRunning = true;
-        gameState.isPaused = false;
-        createWave();
-        gameState.waveTimer = 0;
-    }
-});
-
-document.getElementById('pauseBtn').addEventListener('click', () => {
-    if (gameState.currentScreen === 'game' && gameState.isRunning) {
-        gameState.isPaused = !gameState.isPaused;
-        document.getElementById('pauseBtn').textContent =
-            gameState.isPaused ? '계속하기' : '일시정지';
-    }
-});
-
-document.getElementById('restartBtn').addEventListener('click', () => {
-    if (gameState.currentScreen === 'game') {
-        initGame();
-        gameState.isRunning = false;
-        gameState.isPaused = false;
-        document.getElementById('pauseBtn').textContent = '일시정지';
-    }
-});
-
 // 게임 초기화 및 시작
 gameState.currentScreen = 'home';
-gameLoop(0); 
+gameLoop(0);
