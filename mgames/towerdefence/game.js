@@ -1006,8 +1006,14 @@ canvas.addEventListener('click', (e) => {
                 const x = e.clientX - rect.left;
                 const y = e.clientY - rect.top;
 
-                gameState.dragStartX = x;
-                gameState.dragStartY = y;
+                // 캔버스 스케일 고려한 좌표 변환
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const canvasX = x * scaleX;
+                const canvasY = y * scaleY;
+
+                gameState.dragStartX = canvasX;
+                gameState.dragStartY = canvasY;
             }
         });
 
