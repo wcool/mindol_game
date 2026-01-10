@@ -1,4 +1,4 @@
-:root {
+﻿:root {
     --primary: #6366f1;
     --primary-glow: rgba(99, 102, 241, 0.5);
     --secondary: #a855f7;
@@ -136,6 +136,22 @@ nav {
 
 .logo span {
     color: var(--primary);
+}
+
+
+/* Visitor Counter */
+.visitor-counter {
+    display: flex;
+    align-items: center;
+}
+
+.visitor-counter img {
+    height: 28px;
+    transition: transform 0.3s ease;
+}
+
+.visitor-counter img:hover {
+    transform: scale(1.05);
 }
 
 .nav-links a {
