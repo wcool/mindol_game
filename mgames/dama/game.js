@@ -8,6 +8,7 @@ let poopCount = 0;
 let isGameActive = false;
 let inventory = [];
 
+
 // Mini-game state
 let miniGame = {
     active: false,
@@ -18,6 +19,9 @@ let miniGame = {
     score: 0,
     keys: {}
 };
+
+// miniGame을 전역 스코프에 노출 (터치 컨트롤용)
+window.miniGame = miniGame;
 
 // Evolution stages with sprites - Expanded with many varieties
 const evolutionStages = [
