@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>테트리스 게임</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- 홈 화면 -->
+    <div id="home-screen" class="screen active">
+        <div class="container">
+            <h1 class="game-title">🎮 테트리스</h1>
+            <div class="points-display">
+                <span class="points-label">보유 포인트:</span>
+                <span id="total-points" class="points-value">0</span>
+            </div>
+            <div class="button-group">
+                <button id="start-game-btn" class="btn btn-primary">게임 시작</button>
+                <button id="shop-btn" class="btn btn-secondary">상점</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 게임 화면 -->
+    <div id="game-screen" class="screen">
+        <div class="game-container">
+            <div class="game-header">
+                <button id="back-to-home-btn" class="btn btn-small">← 홈으로</button>
+                <div class="game-info">
+                    <div class="info-item">
+                        <span class="info-label">점수:</span>
+                        <span id="current-score" class="info-value">0</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">레벨:</span>
+                        <span id="current-level" class="info-value">1</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="game-main">
+                <div class="game-board-wrapper">
+                    <canvas id="game-canvas" width="300" height="600"></canvas>
+                    <div id="game-over-overlay" class="game-over-overlay hidden">
+                        <div class="game-over-content">
+                            <h2>게임 오버!</h2>
+                            <p class="final-score">최종 점수: <span id="final-score">0</span></p>
+                            <p class="earned-points">획득 포인트: <span id="earned-points">0</span></p>
+                            <button id="restart-btn" class="btn btn-primary">다시 시작</button>
+                            <button id="home-btn" class="btn btn-secondary">홈으로</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="side-panel">
+                    <div class="next-block-panel">
+                        <h3>다음 블록</h3>
+                        <canvas id="next-canvas" width="120" height="120"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 게임 내 인벤토리 -->
+            <div class="game-inventory">
+                <h3>아이템 인벤토리</h3>
+                <div id="inventory-items" class="inventory-items">
+                    <!-- 동적으로 생성됨 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 상점 화면 -->
+    <div id="shop-screen" class="screen">
+        <div class="shop-container">
+            <div class="shop-header">
+                <button id="back-from-shop-btn" class="btn btn-small">← 홈으로</button>
+                <h2>상점</h2>
+                <div class="points-display">
+                    <span class="points-label">보유 포인트:</span>
+                    <span id="shop-points" class="points-value">0</span>
+                </div>
+            </div>
+
+            <div class="shop-content">
+                <!-- 영구 아이템 (테마) -->
+                <div class="shop-section">
+                    <h3>🎨 테마</h3>
+                    <div class="shop-items">
+                        <div class="shop-item" data-item="theme-classic" data-price="1000" data-type="theme">
+                            <div class="item-icon">🎨</div>
+                            <div class="item-info">
+                                <h4>클래식 테마</h4>
+                                <p>레트로 색상 테마</p>
+                            </div>
+                            <div class="item-price">1,000</div>
+                            <button class="btn btn-buy">구매</button>
+                        </div>
+
+                        <div class="shop-item" data-item="theme-neon" data-price="2000" data-type="theme">
+                            <div class="item-icon">🌈</div>
+                            <div class="item-info">
+                                <h4>네온 테마</h4>
+                                <p>화려한 네온 색상</p>
+                            </div>
+                            <div class="item-price">2,000</div>
+                            <button class="btn btn-buy">구매</button>
+                        </div>
+
+                        <div class="shop-item" data-item="theme-ocean" data-price="2000" data-type="theme">
+                            <div class="item-icon">🌊</div>
+                            <div class="item-info">
+                                <h4>오션 테마</h4>
+                                <p>시원한 바다 색상</p>
+                            </div>
+                            <div class="item-price">2,000</div>
+                            <button class="btn btn-buy">구매</button>
+                        </div>
+
+                        <div class="shop-item" data-item="theme-fire" data-price="2500" data-type="theme">
+                            <div class="item-icon">🔥</div>
+                            <div class="item-info">
+                                <h4>파이어 테마</h4>
+                                <p>뜨거운 불꽃 색상</p>
+                            </div>
+                            <div class="item-price">2,500</div>
+                            <button class="btn btn-buy">구매</button>
+                        </div>
+
+                        <div class="shop-item" data-item="theme-sakura" data-price="2500" data-type="theme">
+                            <div class="item-icon">🌸</div>
+                            <div class="item-info">
+                                <h4>벚꽃 테마</h4>
+                                <p>부드러운 핑크 색상</p>
+                            </div>
+                            <div class="item-price">2,500</div>
+                            <button class="btn btn-buy">구매</button>
+                        </div>
+
+                        <div class="shop-item" data-item="theme-galaxy" data-price="3000" data-type="theme">
+                            <div class="item-icon">🌌</div>
+                            <div class="item-info">
+                                <h4>갤럭시 테마</h4>
+                                <p>우주 느낌의 색상</p>
+                            </div>
+                            <div class="item-price">3,000</div>
+                            <button class="btn btn-buy">구매</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 일회용 아이템 -->
+                <div class="shop-section">
+                    <h3>⚡ 일회용 아이템</h3>
+                    <div class="shop-items">
+                        <div class="shop-item" data-item="slow-motion" data-price="1500" data-type="consumable">
+                            <div class="item-icon">⏱️</div>
+                            <div class="item-info">
+                                <h4>슬로우 모션</h4>
+                                <p>30초간 낙하 속도 50% 감소</p>
+                            </div>
+                            <div class="item-price">1,500</div>
+                            <button class="btn btn-buy">구매</button>
+                        </div>
+
+                        <div class="shop-item" data-item="ghost-block" data-price="2000" data-type="consumable">
+                            <div class="item-icon">👻</div>
+                            <div class="item-info">
+                                <h4>고스트 블록</h4>
+                                <p>착지 위치 미리보기 (1게임)</p>
+                            </div>
+                            <div class="item-price">2,000</div>
+                            <button class="btn btn-buy">구매</button>
+                        </div>
+
+                        <div class="shop-item" data-item="block-change" data-price="1000" data-type="consumable">
+                            <div class="item-icon">🔄</div>
+                            <div class="item-info">
+                                <h4>블록 체인지</h4>
+                                <p>현재 블록을 다른 블록으로 변경</p>
+                            </div>
+                            <div class="item-price">1,000</div>
+                            <button class="btn btn-buy">구매</button>
+                        </div>
+
+                        <div class="shop-item" data-item="line-bomb" data-price="2500" data-type="consumable">
+                            <div class="item-icon">💣</div>
+                            <div class="item-info">
+                                <h4>줄 폭파</h4>
+                                <p>가장 아래 줄을 즉시 제거</p>
+                            </div>
+                            <div class="item-price">2,500</div>
+                            <button class="btn btn-buy">구매</button>
+                        </div>
+
+                        <div class="shop-item" data-item="safety-net" data-price="5000" data-type="consumable">
+                            <div class="item-icon">🛡️</div>
+                            <div class="item-info">
+                                <h4>세이프티 넷</h4>
+                                <p>게임 오버 1회 방지</p>
+                            </div>
+                            <div class="item-price">5,000</div>
+                            <button class="btn btn-buy">구매</button>
+                        </div>
+
+                        <div class="shop-item" data-item="speed-boost" data-price="1200" data-type="consumable">
+                            <div class="item-icon">⚡</div>
+                            <div class="item-info">
+                                <h4>스피드 부스트</h4>
+                                <p>10초간 즉시 낙하 (포인트 2배)</p>
+                            </div>
+                            <div class="item-price">1,200</div>
+                            <button class="btn btn-buy">구매</button>
+                        </div>
+
+                        <div class="shop-item" data-item="perfect-line" data-price="3000" data-type="consumable">
+                            <div class="item-icon">🎯</div>
+                            <div class="item-info">
+                                <h4>퍼펙트 라인</h4>
+                                <p>랜덤 줄 하나를 완성</p>
+                            </div>
+                            <div class="item-price">3,000</div>
+                            <button class="btn btn-buy">구매</button>
+                        </div>
+
+                        <div class="shop-item" data-item="future-sight" data-price="1800" data-type="consumable">
+                            <div class="item-icon">🔮</div>
+                            <div class="item-info">
+                                <h4>미래 예측</h4>
+                                <p>다음 3개 블록 미리보기 (1게임)</p>
+                            </div>
+                            <div class="item-price">1,800</div>
+                            <button class="btn btn-buy">구매</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+
+</html>
