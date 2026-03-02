@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>길건너 친구들 – Mindol Studio</title>
+    <meta name="description" content="귀여운 3D 캐릭터들과 함께 도로를 건너는 게임!">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Noto+Sans+KR:wght@400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- ═══════════ HOME SCREEN ═══════════ -->
+    <div id="screen-home" class="screen active">
+        <div class="home-bg">
+            <div class="bg-blob b1"></div>
+            <div class="bg-blob b2"></div>
+            <div class="bg-blob b3"></div>
+        </div>
+        <header class="home-header">
+            <a href="../../index.html" class="btn-back">← 홈</a>
+            <div class="logo">길건너 <span>친구들</span></div>
+            <div id="home-coin-display" class="coin-display">🪙 0</div>
+        </header>
+
+        <div class="home-center">
+            <div class="char-preview-wrap">
+                <canvas id="home-preview-canvas" width="200" height="200"></canvas>
+                <div class="preview-glow"></div>
+            </div>
+            <div id="home-char-name" class="home-char-name">삐약이</div>
+            <div class="home-score-row">
+                <div class="score-box">
+                    <span class="score-label">최고 기록</span>
+                    <span id="home-highscore" class="score-val">0m</span>
+                </div>
+            </div>
+            <button id="btn-start" class="btn-main pulse">게임 시작 🚀</button>
+            <button id="btn-shop" class="btn-secondary">🛍️ 상점</button>
+        </div>
+
+        <div class="road-deco">
+            <div class="road-line"></div>
+            <div class="road-line"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════ SHOP SCREEN ═══════════ -->
+    <div id="screen-shop" class="screen">
+        <header class="shop-header">
+            <button id="btn-shop-back" class="btn-back">← 뒤로</button>
+            <h1 class="shop-title">🛍️ 상점</h1>
+            <div id="shop-coins" class="coin-display">🪙 0</div>
+        </header>
+
+        <!-- 탭 -->
+        <div class="shop-tabs">
+            <button class="shop-tab-btn active" data-tab="char">👾 캐릭터</button>
+            <button class="shop-tab-btn" data-tab="item">🎒 아이템</button>
+        </div>
+
+        <div class="shop-layout">
+            <div class="shop-preview-panel">
+                <canvas id="preview-canvas" width="160" height="160"></canvas>
+                <p id="preview-name" class="preview-name">삐약이</p>
+                <p id="preview-desc" class="preview-desc">기본 캐릭터! 귀여운 노란 병아리</p>
+            </div>
+            <div id="shop-grid" class="shop-grid"></div>
+        </div>
+    </div>
+
+    <!-- ═══════════ GAME SCREEN ═══════════ -->
+    <div id="screen-game" class="screen">
+        <canvas id="game-canvas"></canvas>
+
+        <!-- Mobile controls -->
+        <div id="mobile-controls" class="mobile-controls">
+            <div class="dpad-row">
+                <button class="dpad-btn" id="dpad-up">▲</button>
+            </div>
+            <div class="dpad-row">
+                <button class="dpad-btn" id="dpad-left">◄</button>
+                <div class="dpad-center"></div>
+                <button class="dpad-btn" id="dpad-right">►</button>
+            </div>
+            <div class="dpad-row">
+                <button class="dpad-btn" id="dpad-down">▼</button>
+            </div>
+        </div>
+
+        <button id="btn-pause" class="btn-pause">⏸</button>
+    </div>
+
+    <!-- ═══════════ GAMEOVER OVERLAY ═══════════ -->
+    <div id="overlay-gameover" class="overlay hidden">
+        <div class="overlay-card">
+            <div class="overlay-emoji">💀</div>
+            <h2>게임 오버!</h2>
+            <div class="result-row">
+                <div class="result-item">
+                    <span>거리</span>
+                    <strong id="result-score">0m</strong>
+                </div>
+                <div class="result-item">
+                    <span>코인 획득</span>
+                    <strong id="result-coins">🪙 0</strong>
+                </div>
+            </div>
+            <div class="result-item highscore-row">
+                <span>최고 기록</span>
+                <strong id="result-highscore">0m</strong>
+            </div>
+            <div class="overlay-btns">
+                <button id="btn-retry" class="btn-main">다시 시작 🔄</button>
+                <button id="btn-home" class="btn-secondary">홈으로 🏠</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="storage.js"></script>
+    <script src="characters.js"></script>
+    <script src="renderer3d.js"></script>
+    <script src="items.js"></script>
+    <script src="effects.js"></script>
+    <script src="game.js"></script>
+    <script src="shop.js"></script>
+    <script src="main.js"></script>
+</body>
+
+</html>
