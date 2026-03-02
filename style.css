@@ -485,3 +485,18 @@ footer {
         gap: 2rem;
     }
 }
+
+/* Featured Game Icon */
+.featured-icon {
+    font-size: 5.5rem;
+    margin-bottom: 1rem;
+    filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+    animation: featuredFloat 3s ease-in-out infinite;
+    text-align: center;
+    width: 100%;
+}
+
+@keyframes featuredFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
+}
