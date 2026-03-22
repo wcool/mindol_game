@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐭 생쥐의 점프 어드벤처</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Noto+Sans+KR:wght@300;400;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- ═══ HOME SCREEN ═══ -->
+    <div id="homeScreen" class="screen active">
+        <div class="bg-blobs">
+            <div class="b1"></div>
+            <div class="b2"></div>
+        </div>
+        <div class="home-content">
+            <div class="title-area">
+                <span class="title-mouse">🐭</span>
+                <h1 class="game-title">생쥐의 점프<br><span class="title-accent">어드벤처</span></h1>
+                <div class="best-score" id="bestScoreDisplay">최고 레벨: 0</div>
+            </div>
+            <div class="home-buttons">
+                <button class="btn-main" id="startBtn" onclick="navigateToPreGame()"><span>▶</span> 게임 시작</button>
+                <button class="btn-secondary" onclick="showScreen('shop')"><span>🛒</span> 아이템 샵</button>
+            </div>
+            <div class="coin-display home-coins">🪙&nbsp;<span id="homeCoinCount">0</span></div>
+        </div>
+    </div>
+
+    <!-- ═══ SHOP SCREEN ═══ -->
+    <div id="shopScreen" class="screen">
+        <div class="shop-header">
+            <button class="btn-back" onclick="showScreen('home')">← 홈</button>
+            <h2>🛒 아이템 샵</h2>
+            <div class="coin-display">🪙&nbsp;<span id="shopCoinCount">0</span></div>
+        </div>
+        <div class="shop-tabs">
+            <button class="tab-btn active" id="tabConsumable" onclick="switchShopTab('consumable')">💊 소모품</button>
+            <button class="tab-btn" id="tabSkill" onclick="switchShopTab('skill')">⚗️ 스킬</button>
+        </div>
+        <div class="shop-grid" id="shopGrid"></div>
+    </div>
+
+    <!-- ═══ PRE-GAME SCREEN ═══ -->
+    <div id="preGameScreen" class="screen">
+        <div class="pregame-container">
+            <h2 class="pregame-title">⚔️ 레벨 <span id="pregameLevel">1</span> 준비!</h2>
+            <p class="pregame-subtitle">사용할 소모품을 하나 선택하세요 (우클릭=없음)</p>
+            <div class="pregame-items" id="pregameItems"></div>
+            <div class="pregame-equipped">
+                <h3>🔧 장착된 스킬</h3>
+                <div class="equipped-list" id="equippedList"></div>
+            </div>
+            <div class="pregame-buttons">
+                <button class="btn-main" onclick="startGame()">▶ 시작!</button>
+                <button class="btn-secondary" onclick="showScreen('home')">← 홈으로</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ GAME SCREEN ═══ -->
+    <div id="gameScreen" class="screen">
+        <canvas id="gameCanvas"></canvas>
+        <div class="hud">
+            <div class="hud-top">
+                <div class="hud-hearts" id="hudHearts"></div>
+                <div class="hud-level">Lv.&nbsp;<span id="hudLevel">1</span></div>
+                <div class="hud-coins">🪙&nbsp;<span id="hudCoins">0</span></div>
+            </div>
+            <div class="hud-skills" id="hudSkills"></div>
+            <div class="hud-consumable" id="hudConsumable"></div>
+        </div>
+    </div>
+
+    <!-- ═══ LEVEL CLEAR SCREEN ═══ -->
+    <div id="levelClearScreen" class="screen">
+        <div class="clear-container">
+            <div class="clear-flag">🚩</div>
+            <h2 class="clear-title">레벨 클리어!</h2>
+            <div class="clear-stats">
+                <div class="stat-row"><span>획득 코인</span><span id="clearCoins">+0 🪙</span></div>
+                <div class="stat-row"><span>남은 하트</span><span id="clearHearts">♥</span></div>
+            </div>
+            <button class="btn-main" onclick="nextLevel()">다음 레벨 →</button>
+        </div>
+    </div>
+
+    <!-- ═══ GAME OVER SCREEN ═══ -->
+    <div id="gameOverScreen" class="screen">
+        <div class="gameover-container">
+            <div class="gameover-emoji">💀</div>
+            <h2 class="gameover-title">게임 오버</h2>
+            <div class="gameover-stats">
+                <div class="stat-row"><span>도달 레벨</span><span id="gameoverLevel">1</span></div>
+                <div class="stat-row"><span>획득 총 코인</span><span id="gameoverCoins">0 🪙</span></div>
+            </div>
+            <button class="btn-main" onclick="showScreen('home')">🏠 홈으로</button>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+
+</html>
