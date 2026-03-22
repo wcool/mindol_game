@@ -59,6 +59,7 @@ let flag = null, levelH = 0, cameraY = 0;
 
 const keys = {};
 let shopTab = 'consumable', selectedCon = null;
+const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
 
 // ── INIT ─────────────────────────────────────────────
 window.addEventListener('load', () => {
@@ -69,9 +70,41 @@ window.addEventListener('load', () => {
     window.addEventListener('resize', resize);
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', e => { delete keys[e.code]; });
+    
+    if (isTouchDevice) {
+        const mc = document.getElementById('mobileControls');
+        if (mc) mc.style.display = 'flex';
+        setupMobileControls();
+    }
+    
     showScreen('home');
     requestAnimationFrame(mainLoop);
 });
+
+function setupMobileControls() {
+    const bindBtn = (id, key, actionFn) => {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        const press = (e) => {
+            if (e.cancelable) e.preventDefault();
+            keys[key] = true;
+            if (actionFn && GST === 'game') actionFn();
+        };
+        const release = (e) => {
+            if (e.cancelable) e.preventDefault();
+            delete keys[key];
+        };
+        btn.addEventListener('touchstart', press, { passive: false });
+        btn.addEventListener('touchend', release, { passive: false });
+        btn.addEventListener('mousedown', press);
+        btn.addEventListener('mouseup', release);
+        btn.addEventListener('mouseleave', release);
+    };
+    bindBtn('btnLeft', 'ArrowLeft');
+    bindBtn('btnRight', 'ArrowRight');
+    bindBtn('btnJump', 'Space', doJump);
+    bindBtn('btnDash', 'KeyS', doDash);
+}
 
 function resize() {
     W = canvas.width = window.innerWidth;
@@ -366,6 +399,12 @@ function buildHUD() {
             const def = CONSUMABLE_DEFS.find(c => c.id === selectedCon);
             if (def) { const d = document.createElement('div'); d.className = 'con-hud'; d.innerHTML = def.emoji + ' ' + def.name + ' <span class="con-hud-key">자동</span>'; ch.appendChild(d); }
         }
+    }
+    
+    // Mobile Dash Button
+    const dashBtn = document.getElementById('btnDash');
+    if (dashBtn && isTouchDevice) {
+        dashBtn.style.display = save.skills.dash ? 'flex' : 'none';
     }
 }
 function updateHudHearts() {
