@@ -115,7 +115,14 @@ function resize() {
 function loadSave() {
     try { 
         const d = JSON.parse(localStorage.getItem('mjump2')); 
-        if (d) Object.assign(save, d); 
+        if (d) {
+            Object.assign(save, d); 
+            // 안위 호환성: 기존 스킬이 있으면 장착된 상태로 마이그레이션
+            if (!save.equippedSkills) {
+                save.equippedSkills = {};
+                for (let k in save.skills) if (save.skills[k]) save.equippedSkills[k] = true;
+            }
+        }
         if (isNaN(save.coins) || save.coins == null) save.coins = 0;
     } catch (e) { }
 }
@@ -156,15 +163,15 @@ function doJump() {
     if (player.deathState) return;
     if (player.onGround) {
         // 점프력 하향 조정 (발판에는 충분히 여유있게 닿음)
-        player.vy = -(13.5 * (save.skills.jumpBooster ? 1.25 : 1));
+        player.vy = -(13.5 * (save.equippedSkills.jumpBooster ? 1.25 : 1));
         player.onGround = false;
-    } else if (save.skills.doubleJump && !player.djUsed) {
-        player.vy = -(12.0 * (save.skills.jumpBooster ? 1.25 : 1));
+    } else if (save.equippedSkills.doubleJump && !player.djUsed) {
+        player.vy = -(12.0 * (save.equippedSkills.jumpBooster ? 1.25 : 1));
         player.djUsed = true;
     }
 }
 function doDash() {
-    if (!save.skills.dash || player.dashCD > 0 || player.deathState) return;
+    if (!save.equippedSkills.dash || player.dashCD > 0 || player.deathState) return;
     player.vx = player.facing * 20;
     player.dashCD = 65;
     spawnPfx(player.x + PW / 2, player.y + PH / 2, '#a78bfa', 8);
@@ -176,6 +183,24 @@ function switchShopTab(tab) {
     document.getElementById('tabConsumable').classList.toggle('active', tab === 'consumable');
     document.getElementById('tabSkill').classList.toggle('active', tab === 'skill');
     buildShop();
+}
+function buyItem(id, type) {
+    const def = (type === 'consumable' ? CONSUMABLE_DEFS : SKILL_DEFS).find(d => d.id === id);
+    if (!def || save.coins < def.price) return;
+    save.coins -= def.price;
+    if (type === 'skill') {
+         save.skills[id] = true;
+         save.equippedSkills[id] = true; // 최초엔 자동 장착
+    }
+    else save.inventory[id] = (save.inventory[id] || 0) + 1;
+    writeSave(); buildShop(); setupHome();
+}
+function toggleSkill(id) {
+    if (save.skills[id]) {
+        save.equippedSkills[id] = !save.equippedSkills[id];
+        writeSave();
+        buildShop();
+    }
 }
 function buildShop() {
     const el = document.getElementById('shopCoinCount'); if (el) el.textContent = save.coins;
@@ -189,22 +214,20 @@ function buildShop() {
         const div = document.createElement('div');
         div.className = 'shop-item' + (isSkill && owned ? ' owned' : '');
         const badge = (!isSkill && owned > 0) ? `<div class="shop-count">×${owned}</div>` : '';
-        const btn = isSkill && owned
-            ? `<div class="shop-equipped-badge">✓ 장착됨</div>`
-            : `<button class="shop-buy-btn" ${!canBuy ? 'disabled' : ''} onclick="buyItem('${item.id}','${shopTab}')">🪙 ${item.price}</button>`;
+        
+        let btn = '';
+        if (isSkill && owned) {
+            const isEq = !!save.equippedSkills[item.id];
+            btn = `<button class="shop-equip-btn ${isEq ? 'equipped' : ''}" onclick="toggleSkill('${item.id}')">${isEq ? '✓ 해제' : '장착'}</button>`;
+        } else {
+            btn = `<button class="shop-buy-btn" ${!canBuy ? 'disabled' : ''} onclick="buyItem('${item.id}','${shopTab}')">🪙 ${item.price}</button>`;
+        }
+        
         div.innerHTML = `${badge}<div class="shop-emoji">${item.emoji}</div>
       <div class="shop-name">${item.name}</div>
       <div class="shop-desc">${item.desc}</div>${btn}`;
         grid.appendChild(div);
     });
-}
-function buyItem(id, type) {
-    const def = (type === 'consumable' ? CONSUMABLE_DEFS : SKILL_DEFS).find(d => d.id === id);
-    if (!def || save.coins < def.price) return;
-    save.coins -= def.price;
-    if (type === 'skill') save.skills[id] = true;
-    else save.inventory[id] = (save.inventory[id] || 0) + 1;
-    writeSave(); buildShop(); setupHome();
 }
 
 // ── PRE-GAME ─────────────────────────────────────────
@@ -228,7 +251,7 @@ function buildPreGame() {
         box.appendChild(div);
     });
     const eqList = document.getElementById('equippedList');
-    const equipped = SKILL_DEFS.filter(s => save.skills[s.id]);
+    const equipped = SKILL_DEFS.filter(s => save.equippedSkills[s.id]);
     eqList.innerHTML = equipped.length ? '' : '<span style="color:var(--muted);font-size:13px">장착된 스킬 없음</span>';
     equipped.forEach(s => { const b = document.createElement('div'); b.className = 'eq-badge'; b.textContent = s.emoji + ' ' + s.name; eqList.appendChild(b); });
 }
@@ -315,7 +338,7 @@ function genLevel(lvl) {
 
         // 고양이: 다양한 색상 및 생김새 추가
         if (lvl >= 1 && pw >= 110 && Math.random() < Math.min(0.20 + lvl * 0.05, 0.45)) {
-            const spd = (0.6 + lvl * 0.07) * (save.skills.slowClock ? 0.5 : 1);
+            const spd = (0.6 + lvl * 0.07) * (save.equippedSkills.slowClock ? 0.5 : 1);
             cats.push({
                 x: px + 12, y: py - CH,
                 vx: spd, minX: px + 6, maxX: px + pw - CW - 6,
@@ -342,7 +365,7 @@ function genLevel(lvl) {
     player.djUsed = false; player.dashCD = 0;
     player.deathState = 0; player.deathTimer = 0;
     player.invTimer = 0; player.blinkTimer = 0;
-    player.shieldHP = save.skills.shield ? 1 : 0;
+    player.shieldHP = save.equippedSkills.shield ? 1 : 0;
     player.reviveReady = false;
     player.conEffect = null; player.conTimer = 0; player.cheeseMult = 1;
     player.killedByCat = false; player.catHitFacing = 1;
@@ -373,13 +396,13 @@ function applyConsumable(id) {
 }
 
 function addHeart() {
-    const max = 3 + (save.skills.extraHeart ? 1 : 0);
+    const max = 3 + (save.equippedSkills.extraHeart ? 1 : 0);
     if (hearts < max) { hearts++; updateHudHearts(); }
 }
 
 // ── HUD ──────────────────────────────────────────────
 function buildHUD() {
-    const max = 3 + (save.skills.extraHeart ? 1 : 0);
+    const max = 3 + (save.equippedSkills.extraHeart ? 1 : 0);
     hearts = max;
     updateHudHearts();
     const lv = document.getElementById('hudLevel'); if (lv) lv.textContent = currentLevel;
@@ -387,9 +410,10 @@ function buildHUD() {
     // Skills
     const sk = document.getElementById('hudSkills'); if (sk) {
         sk.innerHTML = '';
-        SKILL_DEFS.filter(s => save.skills[s.id]).forEach(s => {
-            const d = document.createElement('div'); d.className = 'skill-hud active';
-            d.id = 'hud-skill-' + s.id; d.innerHTML = s.emoji + ' ' + s.name; sk.appendChild(d);
+        Object.keys(save.equippedSkills).forEach(id => {
+            if (!save.equippedSkills[id]) return;
+            const def = SKILL_DEFS.find(s => s.id === id);
+            if (def) { const d = document.createElement('div'); d.className = 'skill-badge'; d.innerHTML = def.emoji; sk.appendChild(d); }
         });
     }
     // Consumable HUD
@@ -404,11 +428,11 @@ function buildHUD() {
     // Mobile Dash Button
     const dashBtn = document.getElementById('btnDash');
     if (dashBtn && isTouchDevice) {
-        dashBtn.style.display = save.skills.dash ? 'flex' : 'none';
+        dashBtn.style.display = save.equippedSkills.dash ? 'flex' : 'none';
     }
 }
 function updateHudHearts() {
-    const max = 3 + (save.skills.extraHeart ? 1 : 0);
+    const max = 3 + (save.equippedSkills.extraHeart ? 1 : 0);
     const el = document.getElementById('hudHearts'); if (!el) return;
     el.innerHTML = '';
     for (let i = 0; i < max; i++) {
@@ -639,7 +663,7 @@ function draw() {
     drawCats();
     drawMouse();
     drawParticles();
-    if (save.skills.cheeseRadar) drawRadar();
+    if (save.equippedSkills.cheeseRadar) drawRadar();
     drawScratch();
 }
 

@@ -785,6 +785,29 @@ body {
     transform: scale(0.92);
 }
 
+.shop-equip-btn {
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.1);
+    color: #ccc;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    margin-right: 10px;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.shop-equip-btn.equipped {
+    background: #10b981;
+    color: white;
+    border-color: #10b981;
+}
+
+.shop-equip-btn:hover {
+    transform: scale(1.05);
+}
+
 .mc-btn-small {
     width: 50px;
     height: 50px;
