@@ -385,78 +385,78 @@
       ctx.restore();
     }
 
-    // Stick body
+    // Cute Chubby Body
     function drawBody(bx, by, runF, dead, duck) {
-      ctx.strokeStyle = C.white; ctx.lineCap = 'round';
+      ctx.save();
+      ctx.fillStyle = '#ffffff'; // 하얀 고양이 몸통
+      ctx.strokeStyle = '#222';
+      ctx.lineWidth = 2.5;
 
       if (dead) {
-        ctx.lineWidth = 4;
-        ctx.beginPath(); ctx.moveTo(bx, by - 70); ctx.lineTo(bx, by - 25); ctx.stroke();
-        ctx.lineWidth = 3.5;
-        ctx.beginPath(); ctx.moveTo(bx, by - 58); ctx.lineTo(bx - 25, by - 32); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(bx - 25, by - 32); ctx.lineTo(bx - 30, by - 14); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(bx, by - 58); ctx.lineTo(bx + 25, by - 36); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(bx + 25, by - 36); ctx.lineTo(bx + 18, by - 18); ctx.stroke();
-        ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(bx, by - 25); ctx.lineTo(bx - 16, by + 2); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(bx - 16, by + 2); ctx.lineTo(bx - 22, by + 24); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(bx, by - 25); ctx.lineTo(bx + 12, by + 2); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(bx + 12, by + 2); ctx.lineTo(bx + 5, by + 24); ctx.stroke();
+        // 죽었을 때는 바닥에 뻗은 모습 (splat)
+        ctx.beginPath();
+        ctx.ellipse(bx - 5, by - 12, 22, 12, 0, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+        // Legs (뻗은 모양)
+        ctx.beginPath(); ctx.moveTo(bx + 15, by - 12); ctx.lineTo(bx + 25, by - 5); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(bx - 25, by - 12); ctx.lineTo(bx - 35, by - 5); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(bx + 10, by - 22); ctx.lineTo(bx + 20, by - 30); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(bx - 20, by - 22); ctx.lineTo(bx - 30, by - 30); ctx.stroke();
+        ctx.restore();
         return;
       }
 
       if (duck) {
-        // ── DUCK pose: crouched low ──
-        // torso nearly horizontal, legs bent, arms back
-        ctx.lineWidth = 4;
-        // torso (horizontal-ish)
-        ctx.beginPath(); ctx.moveTo(bx + 10, by - 22); ctx.lineTo(bx - 10, by - 38); ctx.stroke();
-        // left arm back
-        ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(bx - 6, by - 34); ctx.lineTo(bx - 22, by - 26); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(bx - 22, by - 26); ctx.lineTo(bx - 32, by - 18); ctx.stroke();
-        // right arm back
-        ctx.beginPath(); ctx.moveTo(bx - 6, by - 34); ctx.lineTo(bx + 10, by - 26); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(bx + 10, by - 26); ctx.lineTo(bx + 20, by - 18); ctx.stroke();
-        // left leg bent
-        ctx.lineWidth = 3.5;
-        ctx.beginPath(); ctx.moveTo(bx + 10, by - 22); ctx.lineTo(bx - 2, by - 10); ctx.stroke();
-        ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(bx - 2, by - 10); ctx.lineTo(bx - 5, by + 2); ctx.stroke();
-        // right leg bent
-        ctx.lineWidth = 3.5;
-        ctx.beginPath(); ctx.moveTo(bx + 10, by - 22); ctx.lineTo(bx + 20, by - 10); ctx.stroke();
-        ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(bx + 20, by - 10); ctx.lineTo(bx + 22, by + 2); ctx.stroke();
+        // 구부릴 때는 몸을 납작하게 웅크린 식빵 자세 (Loaf)
+        ctx.beginPath();
+        ctx.ellipse(bx, by - 15, 26, 15, 0, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+        
+        // 앞발 살짝 내밀기
+        ctx.beginPath(); ctx.arc(bx + 18, by - 4, 4, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        // 뒷발 살짝 내밀기
+        ctx.beginPath(); ctx.arc(bx - 18, by - 4, 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        // 꼬리
+        ctx.beginPath(); ctx.moveTo(bx - 24, by - 15); ctx.quadraticCurveTo(bx - 35, by - 25, bx - 30, by - 35); ctx.stroke();
+        ctx.restore();
         return;
       }
 
-      // ── NORMAL running pose ──
+      // 달리기 ── NORMAL running pose ──
       const p = runF;
-      const la = Math.sin(p) * 30;
-      const ra = Math.sin(p + Math.PI) * 30;
-      const kb = Math.abs(Math.sin(p)) * 3;
+      // 다리 움직임 각도 (-1 ~ 1)
+      const leg1 = Math.sin(p);
+      const leg2 = Math.sin(p + Math.PI);
+      const bounce = Math.abs(Math.sin(p)) * 4;
 
-      ctx.lineWidth = 4;
-      ctx.beginPath(); ctx.moveTo(bx, by - 80 - kb); ctx.lineTo(bx, by - 30); ctx.stroke();
-      ctx.lineWidth = 3.5;
-      ctx.beginPath(); ctx.moveTo(bx, by - 68 - kb); ctx.lineTo(bx - 20 + ra * 0.5, by - 50 - kb); ctx.stroke();
-      ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(bx - 20 + ra * 0.5, by - 50 - kb); ctx.lineTo(bx - 28 + ra * 0.6, by - 36 - kb); ctx.stroke();
-      ctx.lineWidth = 3.5;
-      ctx.beginPath(); ctx.moveTo(bx, by - 68 - kb); ctx.lineTo(bx + 20 + la * 0.5, by - 50 - kb); ctx.stroke();
-      ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(bx + 20 + la * 0.5, by - 50 - kb); ctx.lineTo(bx + 28 + la * 0.6, by - 36 - kb); ctx.stroke();
-      ctx.lineWidth = 4;
-      ctx.beginPath(); ctx.moveTo(bx - 10, by - 30); ctx.lineTo(bx + 10, by - 30); ctx.stroke();
-      ctx.lineWidth = 3.5;
-      ctx.beginPath(); ctx.moveTo(bx - 6, by - 30); ctx.lineTo(bx - 6 + la * 0.5, by - 10); ctx.stroke();
-      ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(bx - 6 + la * 0.5, by - 10); ctx.lineTo(bx - 6 + la * 0.6, by + 2); ctx.stroke();
-      ctx.lineWidth = 3.5;
-      ctx.beginPath(); ctx.moveTo(bx + 6, by - 30); ctx.lineTo(bx + 6 + ra * 0.5, by - 10); ctx.stroke();
-      ctx.lineWidth = 3;
-      ctx.beginPath(); ctx.moveTo(bx + 6 + ra * 0.5, by - 10); ctx.lineTo(bx + 6 + ra * 0.6, by + 2); ctx.stroke();
+      const bodyY = by - 46 - bounce; // 머리와 다리 사이
+
+      // 뒤쪽 팔 (가려짐)
+      ctx.fillStyle = '#dddddd';
+      ctx.beginPath(); ctx.arc(bx + 5 + leg1 * 8, bodyY - 5, 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+      // 뒤쪽 다리 (가려짐)
+      ctx.beginPath(); ctx.arc(bx - 5 + leg2 * 10, by - 6 - bounce, 5.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      
+      // 꼬리 살랑살랑
+      ctx.beginPath();
+      ctx.moveTo(bx - 15, bodyY + 15);
+      ctx.quadraticCurveTo(bx - 35, bodyY + 15, bx - 28 + Math.sin(p*0.6)*8, bodyY - 15);
+      ctx.stroke();
+
+      // 통통한 하얀 몸통
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.ellipse(bx, bodyY + 5, 18, 26, Math.PI*0.15, 0, Math.PI * 2);
+      ctx.fill(); ctx.stroke();
+
+      // 앞다리
+      ctx.beginPath(); ctx.arc(bx - 2 + leg1 * 12, by - 6 - bounce, 6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      
+      // 앞쪽 팔
+      ctx.beginPath(); ctx.arc(bx + 10 + leg2 * 10, bodyY + 5, 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+
+      ctx.restore();
     }
 
     // Draw coding obstacles
