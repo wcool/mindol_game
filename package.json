@@ -1,0 +1,8 @@
+{
+  "name": "mindol-game-studio",
+  "version": "1.0.0",
+  "description": "민돌이의 게임 세상",
+  "dependencies": {
+    "@vercel/kv": "^2.0.0"
+  }
+}

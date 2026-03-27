@@ -23,6 +23,10 @@
                 <div class="zombie-count">좀비: <span id="zombieCount">0</span></div>
                 <div class="zombie-passed">통과: <span id="zombiePassed">0</span>/5</div>
             </div>
+            <div style="text-align:center; padding:4px 0;">
+                <span style="font-size:0.75rem; color:#718096;">이 게임이 마음에 드세요?</span>
+                <div id="like-container-PvsZ" style="display:inline-block; margin-left:8px;"></div>
+            </div>
         </div>
 
         <div class="plant-selector">
@@ -120,7 +124,13 @@
         <div class="game-status" id="gameStatus"></div>
     </div>
 
+    <script src="../../likes-widget.js"></script>
     <script src="game.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof LikesWidget !== 'undefined') LikesWidget.init('PvsZ');
+        });
+    </script>
 </body>
 
 </html>

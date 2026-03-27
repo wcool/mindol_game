@@ -1,4 +1,4 @@
-﻿:root {
+:root {
     --primary: #6366f1;
     --primary-glow: rgba(99, 102, 241, 0.5);
     --secondary: #a855f7;
@@ -500,3 +500,73 @@ footer {
     0%, 100% { transform: translateY(0); }
     50% { transform: translateY(-20px); }
 }
+
+/* ═══ 좋아요 버튼 공통 스타일 ═══ */
+.like-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 1rem;
+    border-radius: 50px;
+    border: 1.5px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+    color: #cbd5e1;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    backdrop-filter: blur(6px);
+    user-select: none;
+}
+
+.like-btn:hover {
+    border-color: #f87171;
+    background: rgba(248, 113, 113, 0.1);
+    color: #fca5a5;
+    transform: scale(1.05);
+}
+
+.like-btn.liked {
+    border-color: #f87171;
+    background: rgba(248, 113, 113, 0.15);
+    color: #fca5a5;
+    cursor: default;
+}
+
+.like-btn .like-heart {
+    font-size: 1rem;
+    line-height: 1;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.like-btn.like-pop .like-heart {
+    transform: scale(1.6);
+}
+
+.like-btn .like-count {
+    font-variant-numeric: tabular-nums;
+}
+
+/* 메인 페이지 게임 카드 내 좋아요 위치 */
+.game-info-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+/* 게임 페이지 내 좋아요 컨테이너 */
+.like-container-page {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+
+.like-label {
+    font-size: 0.8rem;
+    color: #64748b;
+}
+

@@ -31,6 +31,10 @@
                 <button class="btn-secondary" onclick="showScreen('shop')"><span>🛒</span> 아이템 샵</button>
             </div>
             <div class="coin-display home-coins">🪙&nbsp;<span id="homeCoinCount">0</span></div>
+            <div class="like-container-page" style="justify-content:center; margin-top:1rem;">
+                <span class="like-label">마음에 드세요?</span>
+                <div id="like-container-maze"></div>
+            </div>
         </div>
     </div>
 
@@ -116,7 +120,15 @@
         </div>
     </div>
 
+    <script src="../../likes-widget.js"></script>
     <script src="game.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof LikesWidget !== 'undefined') {
+                LikesWidget.init('maze');
+            }
+        });
+    </script>
 </body>
 
 </html>

@@ -46,3 +46,10 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         }
     });
 });
+
+// 좋아요 위젯 초기화 (likes-widget.js 로드 후)
+document.addEventListener('DOMContentLoaded', () => {
+    if (typeof LikesWidget !== 'undefined') {
+        LikesWidget.initAll();
+    }
+});

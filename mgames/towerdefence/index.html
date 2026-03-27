@@ -82,6 +82,10 @@
 <body>
     <div class="game-container">
         <h1>🏰 타워 디펜스 게임 🏰</h1>
+        <div style="text-align:center; margin-bottom:10px;">
+            <span style="font-size:0.8rem; color:#718096;">이 게임이 마음에 드세요?</span>
+            <div id="like-container-towerdefence" style="display:inline-block; margin-left:8px;"></div>
+        </div>
         
         <div class="game-info" id="gameInfo">
             <div>💰 골드: <span id="gold">100</span></div>
@@ -99,8 +103,12 @@
         </div>
     </div>
     
+    <script src="../../likes-widget.js"></script>
     <script src="game.js"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof LikesWidget !== 'undefined') LikesWidget.init('towerdefence');
+        });
         // 화면 전환 시 UI 표시/숨김 처리
         function showGameUI() {
             document.getElementById('gameInfo').style.display = 'flex';

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 
 <head>
@@ -16,6 +16,10 @@
             <p>당신의 다마고치 이름을 지어주세요:</p>
             <input type="text" id="nameInput" maxlength="10" placeholder="이름 입력">
             <button id="startButton" class="btn-primary">시작하기</button>
+            <div style="margin-top:12px;">
+                <span style="font-size:0.8rem; color:#94a3b8;">이 게임이 마음에 드세요?</span>
+                <div id="like-container-dama" style="display:inline-block; margin-left:8px;"></div>
+            </div>
         </div>
     </div>
 
@@ -203,7 +207,13 @@
         </div>
     </div>
 
+    <script src="../../likes-widget.js"></script>
     <script src="game.js"></script>
-    <script src="touch-controls.js"></script>`n</body>
+    <script src="touch-controls.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof LikesWidget !== 'undefined') LikesWidget.init('dama');
+        });
+    </script>`n</body>
 
 </html>

@@ -21,6 +21,10 @@
                 <button id="start-game-btn" class="btn btn-primary">게임 시작</button>
                 <button id="shop-btn" class="btn btn-secondary">상점</button>
             </div>
+            <div class="like-container-page">
+                <span class="like-label">이 게임이 마음에 드세요?</span>
+                <div id="like-container-tetris"></div>
+            </div>
         </div>
     </div>
 
@@ -241,7 +245,15 @@
         </div>
     </div>
 
+    <script src="../../likes-widget.js"></script>
     <script src="game.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof LikesWidget !== 'undefined') {
+                LikesWidget.init('tetris');
+            }
+        });
+    </script>
 </body>
 
 </html>
