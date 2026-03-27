@@ -1,9 +1,14 @@
-// Vercel KV를 사용한 게임 좋아요 API
+// Upstash Redis를 사용한 게임 좋아요 API
 // GET  /api/likes?game=tetris  → { game: "tetris", count: 42 }
 // GET  /api/likes              → { pikmin: 3, tetris: 42, ... }
 // POST /api/likes?game=tetris  → { game: "tetris", count: 43 }
 
-import { kv } from '@vercel/kv';
+import { Redis } from '@upstash/redis';
+
+const kv = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN,
+});
 
 export default async function handler(req, res) {
   // CORS 허용
