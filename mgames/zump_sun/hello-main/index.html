@@ -105,9 +105,7 @@
     const ctx = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
 
-    // preload dog image
-    const dogImg = new Image();
-    dogImg.src = 'dog.png';
+    // No external image preloading needed for tuna can
 
     // ── colours ───────────────────────────────────────────────────────────
     const C = {
@@ -272,7 +270,7 @@
       else if (r < 0.40) type = 'bug';
       else if (r < 0.57) type = 'tag';
       else if (r < 0.72) type = 'null_err';
-      else if (r < 0.87) type = 'dog';
+      else if (r < 0.87) type = 'catcan';
       else type = 'terminal';
 
       if (type === 'brace') {
@@ -285,9 +283,9 @@
         obstacles.push({ x: W + 30, type, w: 52, h, y: GROUND_Y - h, air: false });
       } else if (type === 'null_err') {
         obstacles.push({ x: W + 30, type, w: 58, h: 32, y: GROUND_Y - 32, air: false });
-      } else if (type === 'dog') {
-        // dog sprite: 60x55 standing on ground
-        obstacles.push({ x: W + 30, type, w: 60, h: 55, y: GROUND_Y - 55, air: false });
+      } else if (type === 'catcan') {
+        // Tuna Can sprite: 40x35 standing on ground
+        obstacles.push({ x: W + 30, type, w: 40, h: 35, y: GROUND_Y - 35, air: false });
       } else {
         // Terminal: bottom sits at GROUND_Y-72
         // → standing char (top GROUND_Y-108) gets HIT
@@ -429,32 +427,32 @@
       const leg2 = Math.sin(p + Math.PI);
       const bounce = Math.abs(Math.sin(p)) * 4;
 
-      const bodyY = by - 46 - bounce; // 머리와 다리 사이
+      const bodyY = by - 50 - bounce; // 몸통 중심을 아래로 살짝 내림
 
       // 뒤쪽 팔 (가려짐)
       ctx.fillStyle = '#dddddd';
-      ctx.beginPath(); ctx.arc(bx + 5 + leg1 * 8, bodyY - 5, 4.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(bx + 5 + leg1 * 8, bodyY - 10, 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
 
       // 뒤쪽 다리 (가려짐)
-      ctx.beginPath(); ctx.arc(bx - 5 + leg2 * 10, by - 6 - bounce, 5.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(bx - 3 + leg2 * 12, by - 12 - bounce, 6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       
       // 꼬리 살랑살랑
       ctx.beginPath();
-      ctx.moveTo(bx - 15, bodyY + 15);
-      ctx.quadraticCurveTo(bx - 35, bodyY + 15, bx - 28 + Math.sin(p*0.6)*8, bodyY - 15);
+      ctx.moveTo(bx - 15, bodyY + 20);
+      ctx.quadraticCurveTo(bx - 40, bodyY + 15, bx - 35 + Math.sin(p*0.6)*8, bodyY - 15);
       ctx.stroke();
 
-      // 통통한 하얀 몸통
+      // 통통한 하얀 몸통 (머리와 다리 사이를 꽉 채우도록 크기 확장)
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.ellipse(bx, bodyY + 5, 18, 26, Math.PI*0.15, 0, Math.PI * 2);
+      ctx.ellipse(bx, bodyY + 5, 20, 36, Math.PI*0.1, 0, Math.PI * 2); // 반경 y를 36으로 키움
       ctx.fill(); ctx.stroke();
 
       // 앞다리
-      ctx.beginPath(); ctx.arc(bx - 2 + leg1 * 12, by - 6 - bounce, 6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(bx + 2 + leg1 * 14, by - 12 - bounce, 6.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
       
       // 앞쪽 팔
-      ctx.beginPath(); ctx.arc(bx + 10 + leg2 * 10, bodyY + 5, 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(bx + 10 + leg2 * 10, bodyY, 5.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
 
       ctx.restore();
     }
@@ -503,19 +501,29 @@
         ctx.font = '10px Fira Code'; ctx.fillStyle = 'rgba(255,100,100,0.8)';
         ctx.fillText('undefined', x + 2, y + 27);
 
-      } else if (obs.type === 'dog') {
-        // pixel-art dog sprite
-        if (dogImg.complete && dogImg.naturalWidth > 0) {
-          ctx.drawImage(dogImg, x, y, w, h);
-        } else {
-          ctx.font = `${h + 8}px serif`; ctx.fillText('🐕', x, y + h + 4);
-        }
-        // bouncing "WOOF!" speech bubble
+      } else if (obs.type === 'catcan') {
+        // Draw a cute Tuna Can
+        const cX = x, cY = y, cW = w, cH = h;
+        ctx.fillStyle = '#dcdde1'; // 은색 캔 본체
+        roundRect(ctx, cX, cY, cW, cH, 6); ctx.fill();
+        
+        ctx.strokeStyle = '#a4b0be'; ctx.lineWidth = 1.5;
+        roundRect(ctx, cX, cY, cW, cH, 6); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cX, cY + 6); ctx.lineTo(cX + cW, cY + 6); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cX, cY + cH - 6); ctx.lineTo(cX + cW, cY + cH - 6); ctx.stroke();
+
+        ctx.fillStyle = '#ff7675'; // 빨간/분홍색 라벨
+        ctx.fillRect(cX, cY + 7, cW, cH - 14);
+
+        ctx.fillStyle = 'white'; ctx.font = 'bold 11px Fira Code';
+        ctx.fillText('TUNA', cX + 6, cY + 20);
+
+        // 둥실둥실 떠오르는 하트
         obs._t = (obs._t || 0) + 1;
-        const bY = y - 8 + Math.sin(obs._t * 0.18) * 4;
-        ctx.font = 'bold 11px Fira Code'; ctx.fillStyle = 'white';
-        ctx.shadowColor = '#cc6600'; ctx.shadowBlur = 6;
-        ctx.fillText('WOOF!', x + 4, bY);
+        const bY = y - 6 + Math.sin(obs._t * 0.15) * 4;
+        ctx.font = '14px serif';
+        ctx.shadowColor = '#ff6b81'; ctx.shadowBlur = 4;
+        ctx.fillText('❤️', x + 12, bY);
         ctx.shadowBlur = 0;
 
       } else if (obs.type === 'terminal') {
@@ -595,8 +603,8 @@
         blinkTimer++;
         const hit = checkCollision();
         if (hit) {
-          if (hit.type === 'dog') {
-            // dog = bonus points!
+          if (hit.type === 'catcan') {
+            // catcan = bonus points!
             const bonus = 50;
             score += bonus;
             dist += bonus * 5; // sync dist so score display matches
@@ -605,9 +613,9 @@
               x: hit.x + hit.w / 2, y: hit.y,
               vx: 0, vy: -2.5,
               life: 1.4, decay: 0.04,
-              r: 8, col: '#ffdd44', sym: `+${bonus}`,
+              r: 8, col: '#ff7675', sym: `+${bonus}`,
             });
-            // remove this dog from obstacles
+            // remove this can from obstacles
             obstacles = obstacles.filter(o => o !== hit);
           } else {
             die();
@@ -690,12 +698,17 @@
       const dead = state === 'dead';
       const duck = char.duck;
       const blink = blinkTimer % 140 < 7;
-      // Duck: head sits much lower (y-38 instead of y-100)
-      const headY = duck
-        ? char.y - 42
-        : char.y - 100 + (char.onGround ? Math.abs(Math.sin(char.runFrame)) * -3 : 0);
-      const sway = duck ? Math.sin(char.runFrame * 0.8) * 2
-        : char.onGround ? Math.sin(char.runFrame * 0.5) * 3 : (char.vy < 0 ? -5 : 5);
+      
+      let headY = char.y - 100 + (char.onGround ? Math.abs(Math.sin(char.runFrame)) * -3 : 0);
+      let sway = char.onGround ? Math.sin(char.runFrame * 0.5) * 3 : (char.vy < 0 ? -5 : 5);
+
+      if (duck) {
+        headY = char.y - 42;
+        sway = Math.sin(char.runFrame * 0.8) * 2;
+      } else if (dead) {
+        headY = char.y - 20; // 쓰러지면 머리가 바닥에 뒹굶
+        sway = 75; // 회전해서 눕혀짐
+      }
 
       drawBody(CHAR_X, char.y, char.runFrame, dead, duck);
       drawHead(CHAR_X, headY, sway, blink && !dead);
