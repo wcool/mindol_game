@@ -96,7 +96,8 @@
   <canvas id="c" width="800" height="380"></canvas>
 
   <div id="mobile-hint">
-    <span class="key">↑</span> 점프 &nbsp;|&nbsp; <span class="key">↓</span> 구부리기 &nbsp;|&nbsp; 화면 탭 = 점프
+    <span class="key">↑</span> 점프 &nbsp;|&nbsp; <span class="key">↓</span> 구부리기 <br>
+    📱 <span style="color:#ffb432">모바일</span>: 좌측화면 누르기 = <strong>구부리기</strong> &nbsp;|&nbsp; 우측화면 터치 = <strong>점프</strong>
   </div>
 
   <script>
@@ -173,10 +174,28 @@
       if (state === 'start' && (e.key === 'ArrowUp' || e.key === ' ' || e.key === 'Enter')) startGame();
     });
     document.addEventListener('keyup', e => { keys[e.key] = false; });
-    canvas.addEventListener('pointerdown', () => {
-      if (state === 'start') startGame();
-      else if (state === 'dead') restart();
-      else handleJump();
+
+    // ── TOUCH REWORK ──────────────────────────────────────────────────────
+    canvas.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      if (state === 'start') { startGame(); return; }
+      if (state === 'dead') { restart(); return; }
+
+      const rect = canvas.getBoundingClientRect();
+      const touchX = e.clientX - rect.left;
+      
+      if (touchX < rect.width / 2) {
+        keys['ArrowDown'] = true; // 좌측 터치: 구부리기
+      } else {
+        handleJump();             // 우측 터치: 점프
+      }
+    });
+
+    canvas.addEventListener('pointerup', () => {
+      keys['ArrowDown'] = false;
+    });
+    canvas.addEventListener('pointercancel', () => {
+      keys['ArrowDown'] = false;
     });
 
     function handleJump() {
