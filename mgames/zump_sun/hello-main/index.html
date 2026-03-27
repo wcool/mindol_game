@@ -297,9 +297,15 @@
         obstacles.push({ x: W + 30, type, w: 58, h: obsH, y: bottom - obsH, air: true });
       }
 
-      // 장애물 생성 거리: 속도가 빨라지면 생성 픽셀 거리도 조금 더 띄워야 두 장애물이 겹치지 않음
-      // 최소 360픽셀 여유, 최대 600픽셀 사이에서 생성 (속도 보정 일부 추가)
-      nextObsDist = (360 + Math.random() * 260) * (speed / 5);
+      // 난이도 상승 로직: 진행되어 speed가 오를수록 장애물 사이의 기본 픽셀 간격을 줄임
+      let minGap = 360 - (speed - 5) * 20;   // 최고 속도(11) 도달 시 360 -> 240
+      let randGap = 260 - (speed - 5) * 15;  // 최고 도달 시 260 -> 170
+      
+      minGap = Math.max(minGap, 230); // 점프 체공시간을 고려한 최소 여유 픽셀
+      randGap = Math.max(randGap, 100);
+
+      // (speed / 5)를 곱해주는 이유: 스크롤이 빨라져도 점프 후 착지까지 필요한 최소 '시간'을 맞춰주기 위함
+      nextObsDist = (minGap + Math.random() * randGap) * (speed / 5);
     }
 
     // ── COLLISION ─────────────────────────────────────────────────────────
