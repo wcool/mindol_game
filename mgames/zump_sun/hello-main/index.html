@@ -320,54 +320,67 @@
 
     // ── DRAW HELPERS ──────────────────────────────────────────────────────
 
-    // Claude starburst head at (cx, cy)
+    // Cute Cat head at (cx, cy)
     function drawHead(cx, cy, sway, blink) {
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(sway * Math.PI / 180);
 
-      // glow
-      const grd = ctx.createRadialGradient(0, 0, 4, 0, 0, 32);
-      grd.addColorStop(0, 'rgba(255,160,60,0.25)');
-      grd.addColorStop(1, 'transparent');
-      ctx.fillStyle = grd; ctx.beginPath(); ctx.arc(0, 0, 32, 0, Math.PI * 2); ctx.fill();
+      // 귀 (Ears)
+      ctx.fillStyle = '#ffbbcc'; // 핑크 내부
+      ctx.strokeStyle = '#222';
+      ctx.lineWidth = 2.5;
+      ctx.lineJoin = 'round';
+      
+      // 왼쪽 귀
+      ctx.beginPath(); ctx.moveTo(-16, -10); ctx.lineTo(-24, -28); ctx.lineTo(-6, -18);
+      ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(-15, -13); ctx.lineTo(-20, -23); ctx.lineTo(-9, -17);
+      ctx.fillStyle = '#ffbbcc'; ctx.fill();
+      
+      // 오른쪽 귀
+      ctx.beginPath(); ctx.moveTo(16, -10); ctx.lineTo(24, -28); ctx.lineTo(6, -18);
+      ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(15, -13); ctx.lineTo(20, -23); ctx.lineTo(9, -17);
+      ctx.fillStyle = '#ffbbcc'; ctx.fill();
 
-      // rays
-      ctx.strokeStyle = C.orange; ctx.lineWidth = 5; ctx.lineCap = 'round';
-      const ang8 = [0, 45, 90, 135, 180, 225, 270, 315];
-      for (const a of ang8) {
-        const r = a * Math.PI / 180;
-        ctx.beginPath();
-        ctx.moveTo(Math.cos(r) * 20, Math.sin(r) * 20);
-        ctx.lineTo(Math.cos(r) * 34, Math.sin(r) * 34);
-        ctx.stroke();
-      }
-
-      // head circle
-      const grad = ctx.createRadialGradient(-4, -4, 2, 0, 0, 20);
-      grad.addColorStop(0, '#ff9d4e'); grad.addColorStop(1, '#cc5a00');
-      ctx.fillStyle = grad;
-      ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = '#ff9d4e'; ctx.lineWidth = 1.5;
+      // 얼굴 동그라미 (Face circle)
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath(); ctx.arc(0, 0, 22, 0, Math.PI * 2); 
+      ctx.fill(); 
       ctx.stroke();
 
-      // eyes
+      // 볼터치 (Blush)
+      ctx.fillStyle = 'rgba(255, 120, 120, 0.45)';
+      ctx.beginPath(); ctx.ellipse(-12, 6, 5, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(12, 6, 5, 3.5, 0, 0, Math.PI * 2); ctx.fill();
+
+      // 눈 (Eyes)
       if (blink) {
-        ctx.strokeStyle = 'white'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
-        ctx.beginPath(); ctx.moveTo(-8, -4); ctx.lineTo(-4, -4); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(4, -4); ctx.lineTo(8, -4); ctx.stroke();
+        ctx.strokeStyle = '#222'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(-12, 1); ctx.lineTo(-4, 1); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(4, 1); ctx.lineTo(12, 1); ctx.stroke();
       } else {
-        ctx.fillStyle = 'white';
-        ctx.beginPath(); ctx.ellipse(-6, -4, 3.5, 4, 0, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.ellipse(6, -4, 3.5, 4, 0, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#111';
-        ctx.beginPath(); ctx.arc(-5, -3, 1.8, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(7, -3, 1.8, 0, Math.PI * 2); ctx.fill();
+        // 반짝이는 큰 눈
+        ctx.fillStyle = '#222';
+        ctx.beginPath(); ctx.arc(-8, -1, 4.5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(8, -1, 4.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff'; // 하이라이트
+        ctx.beginPath(); ctx.arc(-9, -2.5, 1.5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(7, -2.5, 1.5, 0, Math.PI * 2); ctx.fill();
       }
 
-      // mouth
-      ctx.strokeStyle = 'white'; ctx.lineWidth = 2.2; ctx.lineCap = 'round';
-      ctx.beginPath(); ctx.moveTo(-6, 7); ctx.quadraticCurveTo(0, 13, 6, 7); ctx.stroke();
+      // 입 모양 (Mouth shape 'w')
+      ctx.strokeStyle = '#222'; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(-4, 6);
+      ctx.quadraticCurveTo(-2, 10, 0, 6);
+      ctx.quadraticCurveTo(2, 10, 4, 6);
+      ctx.stroke();
+
+      // 작은 코 (Nose)
+      ctx.fillStyle = '#ffaaaa';
+      ctx.beginPath(); ctx.arc(0, 4, 1.5, 0, Math.PI * 2); ctx.fill();
 
       ctx.restore();
     }
