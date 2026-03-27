@@ -84,6 +84,13 @@ const LikesWidget = (() => {
       const prev = parseInt(countEl.textContent.replace(/,/g, '')) || 0;
       countEl.textContent = (prev + 1).toLocaleString();
 
+      // 총 좋아요 수 함께 업데이트
+      const totalCountEl = document.getElementById('total-likes-count');
+      if (totalCountEl && totalCountEl.textContent !== '--') {
+        const prevTotal = parseInt(totalCountEl.textContent.replace(/,/g, '')) || 0;
+        totalCountEl.textContent = (prevTotal + 1).toLocaleString();
+      }
+
       setTimeout(() => btn.classList.remove('like-pop'), 400);
 
       markLiked(game);
@@ -129,6 +136,13 @@ const LikesWidget = (() => {
 
     const allCounts = await fetchAll();
     const liked = getLiked();
+
+    // 총 좋아요 수 계산 및 표시
+    const totalCountEl = document.getElementById('total-likes-count');
+    if (totalCountEl) {
+      const totalLikes = Object.values(allCounts).reduce((sum, count) => sum + (Number(count) || 0), 0);
+      totalCountEl.textContent = totalLikes.toLocaleString();
+    }
 
     containers.forEach(container => {
       const game = container.dataset.likeGame;
