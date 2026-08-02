@@ -76,11 +76,13 @@ const Game = (() => {
 
     const state = {
         running: false,
+        paused: false,
         score: 0,
         sessionCoins: 0,
         dead: false,
         deadTimer: 0,
     };
+    let deathTimeoutId = null;
 
     const player = {
         col: 4, row: 0,
@@ -104,7 +106,7 @@ const Game = (() => {
     let moveQueue = [];
 
     function onKey(e) {
-        if (!state.running || state.dead) return;
+        if (!state.running || state.dead || state.paused) return;
         const map = {
             ArrowUp: [0, 1], ArrowDown: [0, -1], ArrowLeft: [-1, 0], ArrowRight: [1, 0],
             KeyW: [0, 1], KeyS: [0, -1], KeyA: [-1, 0], KeyD: [1, 0],
@@ -113,6 +115,7 @@ const Game = (() => {
     }
 
     function enqueueMove(dx, dy) {
+        if (state.dead || state.paused) return;
         if (moveQueue.length < 2) moveQueue.push({ dx, dy });
     }
 
@@ -317,18 +320,22 @@ const Game = (() => {
     }
 
     function getLane(row) { return lanes.find(l => l.row === row) || null; }
-    function getScreenY(row) { return (VIEW_ROWS - 1 - (row - Math.floor(cameraRowOffset))) * TILE + TILE / 2; }
+    function getScreenY(row) { return (VIEW_ROWS - 1 - (row - cameraRowOffset)) * TILE + TILE / 2; }
 
     function die(reason) {
         if (state.dead) return;
         state.dead = true;
         state.deadTimer = 0;
+        const prevHigh = Storage.getHighScore();
         Storage.setHighScore(state.score);
         const px = player.x, py = getScreenY(player.row);
         DeathFX.trigger(reason, px, py, canvas.width, canvas.height, charData);
         const delay = (reason === 'car') ? 2200 : (reason === 'train') ? 2000 : 1600;
-        setTimeout(() => {
-            if (typeof onGameOver === 'function') onGameOver(state.score, state.sessionCoins);
+        const isRecord = state.score > 0 && state.score > prevHigh;
+        if (deathTimeoutId) clearTimeout(deathTimeoutId);
+        deathTimeoutId = setTimeout(() => {
+            deathTimeoutId = null;
+            if (typeof onGameOver === 'function') onGameOver(state.score, state.sessionCoins, isRecord);
         }, delay);
     }
 
@@ -349,7 +356,7 @@ const Game = (() => {
     }
 
     function onCanvasClick(e) {
-        if (state.dead || !state.running) return;
+        if (state.dead || !state.running || state.paused) return;
         const rect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
@@ -731,6 +738,7 @@ const Game = (() => {
             player.invincibleTimer = 0;
             state.score = 0; state.sessionCoins = 0;
             state.dead = false; state.deadTimer = 0;
+            if (deathTimeoutId) { clearTimeout(deathTimeoutId); deathTimeoutId = null; }
             blinkTimer = 0; blinkOpen = true;
             shieldFlash = 0;
             moveQueue = [];
@@ -748,12 +756,16 @@ const Game = (() => {
             player.y = player.targetY = getScreenY(player.row);
         },
         start() {
+            if (animId) cancelAnimationFrame(animId);
             state.running = true;
+            state.paused = false;
             lastTime = performance.now();
             animId = requestAnimationFrame(loop);
         },
         stop() {
             state.running = false;
+            state.paused = false;
+            if (deathTimeoutId) { clearTimeout(deathTimeoutId); deathTimeoutId = null; }
             if (animId) cancelAnimationFrame(animId);
             document.removeEventListener('keydown', onKey);
             if (canvas) {
@@ -762,6 +774,31 @@ const Game = (() => {
             }
         },
         setChar(char) { charData = char; },
+        // ── 일시정지 ──
+        pause() {
+            if (!state.running || state.dead || state.paused) return false;
+            state.paused = true;
+            if (animId) cancelAnimationFrame(animId);
+            return true;
+        },
+        resume() {
+            if (!state.running || !state.paused) return;
+            state.paused = false;
+            lastTime = performance.now();
+            animId = requestAnimationFrame(loop);
+        },
+        isPaused() { return state.paused; },
+        // 핫바 영역 터치 판정 (스와이프 이동과 충돌 방지)
+        hitTestHotbar(clientX, clientY) {
+            if (!canvas) return false;
+            const rect = canvas.getBoundingClientRect();
+            const cx = (clientX - rect.left) * (canvas.width / rect.width);
+            const cy = (clientY - rect.top) * (canvas.height / rect.height);
+            return HOTBAR_ITEMS.some((item, idx) => {
+                const r = getHotbarRect(idx);
+                return cx >= r.x && cx <= r.x + r.w && cy >= r.y && cy <= r.y + r.h;
+            });
+        },
         enqueueMove,
         getScore() { return state.score; },
         getSessionCoins() { return state.sessionCoins; },

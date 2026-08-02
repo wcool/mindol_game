@@ -160,7 +160,6 @@ const ActiveItems = {
     getCoinValue() {
         const base = 1;
         const x2 = this.coin2x ? 2 : 1;
-        const upg = Storage.getUpgrade('upg_coinrange');
         return base * x2;
     },
     getCoinRadius() {

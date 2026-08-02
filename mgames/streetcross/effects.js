@@ -6,12 +6,15 @@
 // ─── WEB AUDIO 효과음 ──────────────────────────────
 const SFX = (() => {
     let ac = null;
+    let muted = false;
+    try { muted = localStorage.getItem('streetcross_muted') === '1'; } catch (e) { /* ignore */ }
     function ctx() {
         if (!ac) ac = new (window.AudioContext || window.webkitAudioContext)();
         if (ac.state === 'suspended') ac.resume();
         return ac;
     }
     function osc(freq, type, dur, vol = 0.3, freqEnd = null) {
+        if (muted) return;
         const c = ctx(), o = c.createOscillator(), g = c.createGain();
         o.connect(g); g.connect(c.destination);
         o.type = type;
@@ -22,6 +25,7 @@ const SFX = (() => {
         o.start(); o.stop(c.currentTime + dur);
     }
     function noise(dur, vol = 0.25, hpFreq = 0) {
+        if (muted) return;
         const c = ctx();
         const buf = c.createBuffer(1, c.sampleRate * dur, c.sampleRate);
         const d = buf.getChannelData(0);
@@ -37,6 +41,12 @@ const SFX = (() => {
         g.connect(c.destination); src.start(); src.stop(c.currentTime + dur);
     }
     return {
+        // 음소거 토글
+        setMuted(m) {
+            muted = !!m;
+            try { localStorage.setItem('streetcross_muted', muted ? '1' : '0'); } catch (e) { /* ignore */ }
+        },
+        isMuted() { return muted; },
         // 기차 - 쿵! + 기적 소리
         train() {
             noise(0.05, 0.6);                        // 충격 쿵
