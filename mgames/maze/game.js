@@ -40,7 +40,7 @@ let currentLevel = 1;
 let hearts = 3;
 let levelCoins = 0, sessionCoins = 0;
 
-let save = { coins: 0, bestLevel: 0, skills: {}, inventory: {} };
+let save = { coins: 0, bestLevel: 0, skills: {}, inventory: {}, equippedSkills: {}, muted: false, bestTimes: {} };
 
 const player = {
     x: 0, y: 0, vx: 0, vy: 0,
@@ -59,6 +59,7 @@ let flag = null, levelH = 0, cameraY = 0;
 
 const keys = {};
 let shopTab = 'consumable', selectedCon = null;
+let paused = false, levelTime = 0, shakeT = 0;
 const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
 
 // ── INIT ─────────────────────────────────────────────
@@ -77,6 +78,7 @@ window.addEventListener('load', () => {
         setupMobileControls();
     }
     
+    updateMuteBtn();
     showScreen('home');
     requestAnimationFrame(mainLoop);
 });
@@ -125,6 +127,11 @@ function loadSave() {
         }
         if (isNaN(save.coins) || save.coins == null) save.coins = 0;
     } catch (e) { }
+    // 저장 데이터가 없거나 손상된 경우에도 안전하게 기본값 보장
+    if (!save.skills) save.skills = {};
+    if (!save.inventory) save.inventory = {};
+    if (!save.equippedSkills) save.equippedSkills = {};
+    if (!save.bestTimes) save.bestTimes = {};
 }
 function writeSave() { localStorage.setItem('mjump2', JSON.stringify(save)); }
 
@@ -155,26 +162,108 @@ function onKeyDown(e) {
     if (keys[e.code]) return;
     keys[e.code] = true;
     if (GST !== 'game') return;
+    if (e.code === 'Escape' || e.code === 'KeyP') { togglePause(); return; }
+    if (paused) return;
     if (e.code === 'Space' || e.code === 'ArrowUp') doJump();
     if (e.code === 'KeyS' || e.code === 'ShiftLeft') doDash();
 }
 
 function doJump() {
-    if (player.deathState) return;
+    if (player.deathState || paused) return;
     if (player.onGround) {
         // 점프력 하향 조정 (발판에는 충분히 여유있게 닿음)
         player.vy = -(13.5 * (save.equippedSkills.jumpBooster ? 1.25 : 1));
         player.onGround = false;
+        sfx('jump');
     } else if (save.equippedSkills.doubleJump && !player.djUsed) {
         player.vy = -(12.0 * (save.equippedSkills.jumpBooster ? 1.25 : 1));
         player.djUsed = true;
+        sfx('djump');
     }
 }
 function doDash() {
-    if (!save.equippedSkills.dash || player.dashCD > 0 || player.deathState) return;
+    if (!save.equippedSkills.dash || player.dashCD > 0 || player.deathState || paused) return;
     player.vx = player.facing * 20;
     player.dashCD = 65;
+    sfx('dash');
     spawnPfx(player.x + PW / 2, player.y + PH / 2, '#a78bfa', 8);
+}
+
+// ── SOUND (Web Audio 신디사이저) ─────────────────────
+let audioCtx = null;
+function getAC() {
+    if (!audioCtx) {
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return null; }
+    }
+    if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+}
+function tone(freq, dur, type = 'square', vol = 0.14, slideTo = 0, delay = 0) {
+    const c = getAC(); if (!c) return;
+    const t0 = c.currentTime + delay;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type;
+    o.frequency.setValueAtTime(Math.max(30, freq), t0);
+    if (slideTo) o.frequency.exponentialRampToValueAtTime(Math.max(30, slideTo), t0 + dur);
+    g.gain.setValueAtTime(vol, t0);
+    g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+    o.connect(g); g.connect(c.destination);
+    o.start(t0); o.stop(t0 + dur + 0.03);
+}
+function sfx(name) {
+    if (save.muted) return;
+    switch (name) {
+        case 'jump': tone(280, 0.14, 'square', 0.10, 560); break;
+        case 'djump': tone(400, 0.14, 'square', 0.10, 800); break;
+        case 'dash': tone(900, 0.18, 'sawtooth', 0.09, 220); break;
+        case 'cheese': tone(880, 0.07, 'sine', 0.13); tone(1320, 0.10, 'sine', 0.11, 0, 0.06); break;
+        case 'hurt': tone(220, 0.20, 'sawtooth', 0.15, 90); break;
+        case 'shield': tone(520, 0.10, 'triangle', 0.12, 700); break;
+        case 'revive': tone(440, 0.15, 'triangle', 0.13, 880); tone(660, 0.2, 'triangle', 0.12, 1320, 0.12); break;
+        case 'death': tone(420, 0.55, 'sawtooth', 0.14, 60); break;
+        case 'clear': [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.18, 'triangle', 0.13, 0, i * 0.11)); break;
+        case 'gameover': [392, 330, 262, 196].forEach((f, i) => tone(f, 0.26, 'triangle', 0.13, 0, i * 0.16)); break;
+        case 'buy': tone(660, 0.08, 'sine', 0.11); tone(990, 0.12, 'sine', 0.11, 0, 0.07); break;
+        case 'click': tone(500, 0.05, 'sine', 0.07); break;
+        case 'pause': tone(440, 0.08, 'sine', 0.09, 330); break;
+    }
+}
+function toggleMute() {
+    save.muted = !save.muted;
+    writeSave();
+    updateMuteBtn();
+    if (!save.muted) sfx('click');
+}
+function updateMuteBtn() {
+    const b = document.getElementById('muteBtn');
+    if (b) { b.textContent = save.muted ? '🔇' : '🔊'; b.title = save.muted ? '소리 켜기' : '소리 끄기'; }
+}
+
+// ── PAUSE / RESTART ──────────────────────────────────
+function togglePause() {
+    if (GST !== 'game' || player.deathState) return;
+    paused = !paused;
+    const ov = document.getElementById('pauseOverlay');
+    if (ov) ov.style.display = paused ? 'flex' : 'none';
+    sfx('pause');
+}
+function hidePauseOverlay() {
+    paused = false;
+    const ov = document.getElementById('pauseOverlay');
+    if (ov) ov.style.display = 'none';
+}
+function restartLevel() {
+    hidePauseOverlay();
+    levelCoins = 0;
+    genLevel(currentLevel);
+    if (selectedCon) applyConsumable(selectedCon); // 이미 소모한 아이템 효과 유지
+    buildHUD();
+    sfx('click');
+}
+function quitToHome() {
+    hidePauseOverlay();
+    sfx('click');
+    showScreen('home');
 }
 
 // ── SHOP ─────────────────────────────────────────────
@@ -188,6 +277,7 @@ function buyItem(id, type) {
     const def = (type === 'consumable' ? CONSUMABLE_DEFS : SKILL_DEFS).find(d => d.id === id);
     if (!def || save.coins < def.price) return;
     save.coins -= def.price;
+    sfx('buy');
     if (type === 'skill') {
          save.skills[id] = true;
          save.equippedSkills[id] = true; // 최초엔 자동 장착
@@ -198,6 +288,7 @@ function buyItem(id, type) {
 function toggleSkill(id) {
     if (save.skills[id]) {
         save.equippedSkills[id] = !save.equippedSkills[id];
+        sfx('click');
         writeSave();
         buildShop();
     }
@@ -370,6 +461,10 @@ function genLevel(lvl) {
     player.conEffect = null; player.conTimer = 0; player.cheeseMult = 1;
     player.killedByCat = false; player.catHitFacing = 1;
     cameraY = player.y - H * 0.75;   // 플레이어를 화면 하단에 위치
+    levelTime = 0; shakeT = 0;
+    paused = false;
+    const ov = document.getElementById('pauseOverlay');
+    if (ov) ov.style.display = 'none';
 }
 
 // ── GAME START ────────────────────────────────────────
@@ -413,7 +508,7 @@ function buildHUD() {
         Object.keys(save.equippedSkills).forEach(id => {
             if (!save.equippedSkills[id]) return;
             const def = SKILL_DEFS.find(s => s.id === id);
-            if (def) { const d = document.createElement('div'); d.className = 'skill-badge'; d.innerHTML = def.emoji; sk.appendChild(d); }
+            if (def) { const d = document.createElement('div'); d.className = 'skill-badge'; d.id = 'hud-skill-' + id; d.innerHTML = def.emoji; sk.appendChild(d); }
         });
     }
     // Consumable HUD
@@ -475,11 +570,15 @@ function damage() {
     }
     player.invTimer = INV_DUR;
     player.blinkTimer = BLINK_DUR;
-    spawnPfx(player.x + PW / 2 - cameraY, player.y + PH / 2, '#ff4444', 10);
+    shakeT = 12;
+    sfx('hurt');
+    spawnPfx(player.x + PW / 2, player.y + PH / 2, '#ff4444', 10);
 }
 
 function killPlayer() {
     player.deathState = 1; player.vy = -11; player.vx = 0; player.deathTimer = 0;
+    shakeT = 20;
+    sfx('death');
     spawnPfx(player.x + PW / 2, player.y + PH / 2, '#ff2244', 20);
 }
 
@@ -496,12 +595,20 @@ let lastTS = 0;
 function mainLoop(ts) {
     requestAnimationFrame(mainLoop);
     const dt = Math.min((ts - lastTS) / 16.67, 3); lastTS = ts;
-    if (GST === 'game') update(dt);
+    if (GST === 'game' && !paused) update(dt);
     draw();
 }
 
 // ── UPDATE ────────────────────────────────────────────
 function update(dt) {
+    // 레벨 타이머 & 화면 흔들림 감쇠
+    if (!player.deathState) {
+        levelTime += dt * 16.67;
+        const tEl = document.getElementById('hudTimer');
+        if (tEl) tEl.textContent = fmtTime(levelTime);
+    }
+    if (shakeT > 0) shakeT -= dt;
+
     // 소모품 타이머
     if (player.conTimer > 0) { player.conTimer -= dt; if (player.conTimer <= 0) player.conEffect = null; }
 
@@ -524,7 +631,7 @@ function update(dt) {
     if (player.dashCD > 0) player.dashCD -= dt;
 
     // 이동속도 상향 (5.8 -> 6.5)
-    const spd = (save.skills.speedShoes ? 1.3 : 1) * 6.5;
+    const spd = (save.equippedSkills.speedShoes ? 1.3 : 1) * 6.5;
     if (keys['ArrowLeft']) { player.vx -= 1.8 * dt; player.facing = -1; }
     if (keys['ArrowRight']) { player.vx += 1.8 * dt; player.facing = 1; }
     player.vx *= 0.80; player.vx = Math.max(-spd, Math.min(spd, player.vx));
@@ -541,7 +648,7 @@ function update(dt) {
     if (player.y > levelH + 200) { damage(); if (player.deathState === 0) respawn(); }
 
     // 치즈 수집
-    const magnetRange = save.skills.cheeseMagnet ? 80 : 0;
+    const magnetRange = save.equippedSkills.cheeseMagnet ? 80 : 0;
     cheeses.forEach(c => {
         const cx = c.x + CHW / 2;
         const cy = c.y + CHH / 2;
@@ -555,6 +662,7 @@ function update(dt) {
             save.coins += player.cheeseMult;
             sessionCoins += player.cheeseMult;
             writeSave();
+            sfx('cheese');
             spawnPfx(c.x + CHW / 2, c.y, '#ffd700', 6);
             updateHudCoins();
         }
@@ -569,7 +677,8 @@ function update(dt) {
                     hearts = Math.max(1, hearts);
                     updateHudHearts();
                     player.invTimer = 180;
-                    spawnPfx(player.x + PW / 2 - cameraY, player.y + PH / 2, '#a78bfa', 15);
+                    sfx('revive');
+                    spawnPfx(player.x + PW / 2, player.y + PH / 2, '#a78bfa', 15);
                 } else {
                     player.killedByCat = true;
                     player.catHitFacing = c.facing;
@@ -584,8 +693,8 @@ function update(dt) {
     if (player.invTimer <= 0) {
         for (const s of spikes) {
             if (aabb(player.x + 4, player.y + PH - 10, PW - 8, 12, s.x, s.y, s.w, s.h)) {
-                if (save.skills.shield && player.shieldHP > 0) { player.shieldHP--; player.invTimer = 60; }
-                else if (save.skills.wizardHat && Math.random() < 0.5) { player.invTimer = 40; }
+                if (save.equippedSkills.shield && player.shieldHP > 0) { player.shieldHP--; player.invTimer = 60; sfx('shield'); }
+                else if (save.equippedSkills.wizardHat && Math.random() < 0.5) { player.invTimer = 40; sfx('shield'); }
                 else damage();
                 break;
             }
@@ -606,7 +715,7 @@ function update(dt) {
     });
 
     // 고양이 방울 경고
-    if (save.skills.catBell) {
+    if (save.equippedSkills.catBell) {
         const near = cats.some(c => !c.stunned && Math.hypot(c.x - player.x, c.y - player.y) < 130);
         const bd = document.getElementById('hud-skill-catBell');
         if (bd) { bd.style.background = near ? 'rgba(239,68,68,.4)' : ''; bd.style.borderColor = near ? '#ef4444' : ''; }
@@ -635,18 +744,40 @@ function respawn() {
 
 function doClear() {
     const bonus = 50 + currentLevel * 10;
-    save.coins += bonus; writeSave(); sessionCoins += bonus;
+    save.coins += bonus; sessionCoins += bonus;
+    if (currentLevel > save.bestLevel) save.bestLevel = currentLevel;
+    // 최고 기록(클리어 시간) 저장
+    const key = String(currentLevel);
+    const t = Math.round(levelTime);
+    const prevBest = save.bestTimes[key];
+    const isNewRecord = !prevBest || t < prevBest;
+    if (isNewRecord) save.bestTimes[key] = t;
+    writeSave();
+    sfx('clear');
     document.getElementById('clearCoins').textContent = `+${levelCoins} (보너스 +${bonus}) 🪙`;
     let hs = ''; for (let i = 0; i < hearts; i++) hs += '❤️';
     document.getElementById('clearHearts').textContent = hs || '없음';
+    const ct = document.getElementById('clearTime');
+    if (ct) ct.textContent = fmtTime(t) + (isNewRecord ? ' ✨ 신기록!' : '');
+    const cb = document.getElementById('clearBestTime');
+    if (cb) cb.textContent = fmtTime(save.bestTimes[key]);
     showScreen('levelClear');
+}
+
+function fmtTime(ms) {
+    const total = Math.max(0, Math.round(ms));
+    const m = Math.floor(total / 60000);
+    const s = Math.floor((total % 60000) / 1000);
+    const d = Math.floor((total % 1000) / 100);
+    return m + ':' + String(s).padStart(2, '0') + '.' + d;
 }
 function nextLevel() { currentLevel++; if (currentLevel > save.bestLevel) { save.bestLevel = currentLevel; writeSave(); } showScreen('preGame'); }
 
 function doGameOver() {
     document.getElementById('gameoverLevel').textContent = currentLevel;
     document.getElementById('gameoverCoins').textContent = sessionCoins + ' 🪙';
-    setTimeout(() => { currentLevel = 1; sessionCoins = 0; hearts = 3; showScreen('gameOver'); }, 1600);
+    if (currentLevel > save.bestLevel) { save.bestLevel = currentLevel; writeSave(); }
+    setTimeout(() => { currentLevel = 1; sessionCoins = 0; hearts = 3; sfx('gameover'); showScreen('gameOver'); }, 1600);
 }
 
 // ── WORLD → SCREEN ────────────────────────────────────
@@ -655,6 +786,12 @@ function wy(y) { return y - cameraY; }
 // ── DRAW ──────────────────────────────────────────────
 function draw() {
     if (GST !== 'game') { ctx.clearRect(0, 0, W, H); return; }
+    ctx.save();
+    // 피격 시 화면 흔들림
+    if (shakeT > 0) {
+        const m = Math.min(shakeT, 12) * 0.5;
+        ctx.translate((Math.random() - 0.5) * m, (Math.random() - 0.5) * m);
+    }
     drawBg();
     drawPlatforms();
     drawSpikes();
@@ -665,6 +802,7 @@ function draw() {
     drawParticles();
     if (save.equippedSkills.cheeseRadar) drawRadar();
     drawScratch();
+    ctx.restore();
 }
 
 // ── BACKGROUND ────────────────────────────────────────
@@ -672,7 +810,7 @@ function drawBg() {
     // 다크 우주 배경
     const g = ctx.createLinearGradient(0, 0, 0, H);
     g.addColorStop(0, '#08001a'); g.addColorStop(1, '#0a1230');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = g; ctx.fillRect(-10, -10, W + 20, H + 20); // 흔들림 시 가장자리 노출 방지
     // 별
     ctx.fillStyle = 'rgba(255,255,255,0.7)';
     for (let i = 0; i < 45; i++) {
