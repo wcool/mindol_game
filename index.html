@@ -50,14 +50,14 @@
                 </div>
             </div>
             <div class="hero-image" data-reveal="right">
-                <div class="game-card-featured" style="background: linear-gradient(135deg, #f59e0b, #a855f7 100%);">
+                <div class="game-card-featured" style="background: linear-gradient(135deg, #ef4444, #8b5cf6 100%);">
                     <div class="card-glow"></div>
                     <div class="card-content">
                         <div class="tag">NEW & FEATURED</div>
-                        <div class="featured-icon">🐭</div>
-                        <h3>생쥐의 점프 어드벤처</h3>
-                        <p>거대한 고양이를 피하고 치즈를 모아<br>끝없이 위로 점프해 보세요!</p>
-                        <a href="mgames/maze/index.html" class="btn-play-link">지금 플레이 <span>→</span></a>
+                        <div class="featured-icon">⚔️</div>
+                        <h3>몬스터 헌터 RPG</h3>
+                        <p>16개 지역, 80종의 몬스터!<br>펫과 장비를 모아 혼돈의 신까지 무찔러 보세요!</p>
+                        <a href="mgames/monster_rpg/index.html" class="btn-play-link">지금 플레이 <span>→</span></a>
                     </div>
                 </div>
             </div>
@@ -68,9 +68,19 @@
                 <h2>My Games</h2>
                 <p>민돌이가 개발한 게임 리스트입니다.</p>
             </div>
+            <div class="filter-bar" data-reveal>
+                <button class="filter-chip active" data-filter="all">전체</button>
+                <button class="filter-chip" data-filter="액션">액션</button>
+                <button class="filter-chip" data-filter="퍼즐">퍼즐</button>
+                <button class="filter-chip" data-filter="디펜스">디펜스</button>
+                <button class="filter-chip" data-filter="육성">육성</button>
+                <button class="filter-chip" data-filter="아케이드">아케이드</button>
+                <button class="filter-chip" data-filter="힐링">힐링</button>
+                <button class="filter-chip" data-filter="RPG">RPG</button>
+            </div>
             <div class="game-grid">
                 <!-- Game 1 -->
-                <div class="game-card" data-reveal="bottom">
+                <div class="game-card" data-reveal="bottom" data-category="육성">
                     <div class="game-thumb" style="background: linear-gradient(45deg, #6366f1, #a855f7);">
                         <i class="game-icon">🌱</i>
                     </div>
@@ -84,7 +94,7 @@
                     </div>
                 </div>
                 <!-- Game 2 -->
-                <div class="game-card" data-reveal="bottom" data-delay="100">
+                <div class="game-card" data-reveal="bottom" data-delay="100" data-category="디펜스">
                     <div class="game-thumb" style="background: linear-gradient(45deg, #f59e0b, #ef4444);">
                         <i class="game-icon">🧟</i>
                     </div>
@@ -98,7 +108,7 @@
                     </div>
                 </div>
                 <!-- Game 3 -->
-                <div class="game-card" data-reveal="bottom" data-delay="200">
+                <div class="game-card" data-reveal="bottom" data-delay="200" data-category="디펜스">
                     <div class="game-thumb" style="background: linear-gradient(45deg, #10b981, #3b82f6);">
                         <i class="game-icon">🛡️</i>
                     </div>
@@ -113,7 +123,7 @@
                 </div>
 
                 <!-- Game 4 -->
-                <div class="game-card" data-reveal="bottom" data-delay="300">
+                <div class="game-card" data-reveal="bottom" data-delay="300" data-category="육성">
                     <div class="game-thumb" style="background: linear-gradient(45deg, #ec4899, #8b5cf6);">
                         <i class="game-icon">🐣</i>
                     </div>
@@ -128,7 +138,7 @@
                 </div>
 
                 <!-- Game 5 -->
-                <div class="game-card" data-reveal="bottom" data-delay="400">
+                <div class="game-card" data-reveal="bottom" data-delay="400" data-category="아케이드">
                     <div class="game-thumb" style="background: linear-gradient(45deg, #f472b6, #fb923c);">
                         <i class="game-icon">🎁</i>
                     </div>
@@ -143,7 +153,7 @@
                 </div>
 
                 <!-- Game 6 -->
-                <div class="game-card" data-reveal="bottom" data-delay="500">
+                <div class="game-card" data-reveal="bottom" data-delay="500" data-category="퍼즐">
                     <div class="game-thumb" style="background: linear-gradient(45deg, #8b5cf6, #ec4899);">
                         <i class="game-icon">🎮</i>
                     </div>
@@ -158,7 +168,7 @@
                 </div>
 
                 <!-- Game 7 -->
-                <div class="game-card" data-reveal="bottom" data-delay="600">
+                <div class="game-card" data-reveal="bottom" data-delay="600" data-category="아케이드">
                     <div class="game-thumb" style="background: linear-gradient(45deg, #06b6d4, #6366f1);">
                         <i class="game-icon">🐥</i>
                     </div>
@@ -173,7 +183,7 @@
                 </div>
 
                 <!-- Game 8 -->
-                <div class="game-card" data-reveal="bottom" data-delay="700">
+                <div class="game-card" data-reveal="bottom" data-delay="700" data-category="액션">
                     <div class="game-thumb" style="background: linear-gradient(45deg, #f59e0b, #a855f7);">
                         <i class="game-icon">🐭</i>
                     </div>
@@ -188,7 +198,7 @@
                 </div>
 
                 <!-- Game 9 -->
-                <div class="game-card" data-reveal="bottom" data-delay="800">
+                <div class="game-card" data-reveal="bottom" data-delay="800" data-category="액션">
                     <div class="game-thumb" style="background: linear-gradient(45deg, #e07b39, #ffb432);">
                         <i class="game-icon">🐕</i>
                     </div>
@@ -198,6 +208,37 @@
                         <div class="game-info-footer">
                             <a href="mgames/zump_sun/hello-main/index.html" class="btn-small">Launch Game</a>
                             <div data-like-game="zump_sun"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Game 10 -->
+                <div class="game-card" data-reveal="bottom" data-delay="900" data-category="힐링">
+                    <div class="game-thumb" style="background: linear-gradient(45deg, #38bdf8, #a78bfa);">
+                        <span class="new-badge">NEW</span>
+                        <i class="game-icon">🎧</i>
+                    </div>
+                    <div class="game-info">
+                        <h3>쾌감 ASMR 터치</h3>
+                        <p>40가지 촉감을 수집하는 힐링 사운드 클리커! 이어폰을 끼고 즐겨보세요.</p>
+                        <div class="game-info-footer">
+                            <a href="mgames/asmr/index.html" class="btn-small">Launch Game</a>
+                            <div data-like-game="asmr"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Game 11 -->
+                <div class="game-card" data-reveal="bottom" data-delay="1000" data-category="RPG">
+                    <div class="game-thumb" style="background: linear-gradient(45deg, #ef4444, #8b5cf6);">
+                        <span class="new-badge">NEW</span>
+                        <i class="game-icon">⚔️</i>
+                    </div>
+                    <div class="game-info">
+                        <h3>몬스터 헌터 RPG</h3>
+                        <p>16개 지역 80종의 몬스터! 펫 캡슐 뽑기와 장비 성장까지, 혼돈의 신을 무찔러 보세요!</p>
+                        <div class="game-info-footer">
+                            <a href="mgames/monster_rpg/index.html" class="btn-small">Launch Game</a>
+                            <div data-like-game="monster_rpg"></div>
                         </div>
                     </div>
                 </div>
@@ -211,7 +252,7 @@
                     보람입니다.</p>
                 <div class="stats">
                     <div class="stat-item">
-                        <span class="stat-value">9+</span>
+                        <span class="stat-value">11+</span>
                         <span class="stat-label">Games Done</span>
                     </div>
 
@@ -226,13 +267,15 @@
 
     <footer>
         <div class="footer-content">
-            <p>&copy; 2025 Mindol Studio. All rights reserved.</p>
+            <p>&copy; 2026 Mindol Studio. All rights reserved.</p>
             <div class="social-links">
                 <a href="#">Github</a>
                 <a href="#">Twitter</a>
             </div>
         </div>
     </footer>
+
+    <button id="scroll-top" title="맨 위로" aria-label="맨 위로">↑</button>
 
     <script src="likes-widget.js"></script>
     <script src="main.js"></script>

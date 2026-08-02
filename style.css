@@ -501,6 +501,125 @@ footer {
     50% { transform: translateY(-20px); }
 }
 
+/* ═══ 장르 필터 바 ═══ */
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-top: 2rem;
+}
+
+.filter-chip {
+    padding: 0.5rem 1.2rem;
+    border-radius: 50px;
+    border: 1px solid var(--glass-border);
+    background: var(--glass);
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    backdrop-filter: blur(6px);
+}
+
+.filter-chip:hover {
+    border-color: var(--primary);
+    color: var(--text-light);
+    transform: translateY(-2px);
+}
+
+.filter-chip.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: white;
+    box-shadow: 0 6px 16px -4px var(--primary-glow);
+}
+
+.game-card.filtered-out {
+    display: none;
+}
+
+/* ═══ NEW 배지 ═══ */
+.game-thumb {
+    position: relative;
+}
+
+.new-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: linear-gradient(135deg, #f43f5e, #f97316);
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    padding: 0.35rem 0.75rem;
+    border-radius: 50px;
+    box-shadow: 0 4px 14px rgba(244, 63, 94, 0.55);
+    animation: newPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes newPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+}
+
+/* ═══ 맨 위로 버튼 ═══ */
+#scroll-top {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1px solid var(--glass-border);
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(8px);
+    color: var(--text-light);
+    font-size: 1.2rem;
+    font-weight: 800;
+    cursor: pointer;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    z-index: 90;
+}
+
+#scroll-top.visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+#scroll-top:hover {
+    background: var(--primary);
+    border-color: var(--primary);
+    box-shadow: 0 8px 20px -4px var(--primary-glow);
+}
+
+/* ═══ 모바일 내비 보완 ═══ */
+@media (max-width: 600px) {
+    .nav-links a {
+        margin-left: 1rem;
+        font-size: 0.8rem;
+    }
+
+    .visitor-counter {
+        display: none;
+    }
+
+    .filter-bar {
+        gap: 0.4rem;
+    }
+
+    .filter-chip {
+        padding: 0.4rem 0.9rem;
+        font-size: 0.78rem;
+    }
+}
+
 /* ═══ 좋아요 버튼 공통 스타일 ═══ */
 .like-btn {
     display: inline-flex;
