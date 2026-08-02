@@ -1185,14 +1185,16 @@ function showToast(msg) {
 }
 
 // 타워 버튼 히트 테스트 (버튼 인덱스 0~7, 없으면 null)
+// 모바일에서 캔버스가 축소되면 버튼이 매우 작아지므로 판정 영역에 여유(pad)를 둔다
 const TOWER_BUTTON_ITEMS = [null, 'laser', 'missile', 'lightning', 'ice', 'fire', 'golden_tower', 'rainbow_shot'];
 function hitTowerButton(x, y) {
     const buttonWidth = 120, buttonHeight = 35, spacing = 45;
     const startX = canvas.width - 150, startY = 20;
-    if (x < startX || x > startX + buttonWidth) return null;
+    const padX = 15, padY = 5; // 버튼 간격(10px)의 절반까지 세로 확장
+    if (x < startX - padX || x > startX + buttonWidth + padX) return null;
     for (let i = 0; i < TOWER_BUTTON_ITEMS.length; i++) {
         const by = startY + spacing * i;
-        if (y > by && y < by + buttonHeight) return i;
+        if (y > by - padY && y < by + buttonHeight + padY) return i;
     }
     return null;
 }
@@ -1258,7 +1260,7 @@ function handleCanvasClick(x, y) {
         });
     }
     else if (gameState.currentScreen === 'game' && gameState.isRunning && !gameState.isPaused) {
-        // 타워 버튼 공통 전처리: 이중 차감 방지 + 실패 사유 피드백
+        // 타워 버튼 처리 (패딩 판정 포함 — 모바일에서도 누르기 쉽게)
         const btnIdx = hitTowerButton(x, y);
         if (btnIdx !== null) {
             if (gameState.isDragging) return; // 드래그 중 버튼 재클릭 무시 (골드 이중 차감 방지)
@@ -1277,6 +1279,16 @@ function handleCanvasClick(x, y) {
                 showToast('🪙 골드가 부족해요! (타워 건설 ' + cost + ' 골드)');
                 return;
             }
+            // 드래그 시작 (아래의 정밀 좌표 분기는 패딩 영역을 커버하지 못하므로 여기서 직접 처리)
+            const TOWER_TYPES = ['basic', 'laser', 'missile', 'lightning', 'ice', 'fire', 'golden', 'rainbow'];
+            gameState.selectedTowerType = TOWER_TYPES[btnIdx];
+            gameState.isDragging = true;
+            gameState.dragTower = { x: x, y: y };
+            gameState.dragStartX = x;
+            gameState.dragStartY = y;
+            gameState.gold -= cost;
+            updateUI();
+            return;
         }
         // 타워 버튼들 클릭 처리
         const buttonWidth = 120;
