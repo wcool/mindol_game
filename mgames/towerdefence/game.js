@@ -155,6 +155,7 @@ const soundManager = {
     death() { this.tone(420, 0.2, 'sawtooth', 0.1, 90); },
     waveStart() { this.tone(440, 0.18, 'triangle', 0.15, 880); },
     lifeLost() { this.tone(220, 0.3, 'sawtooth', 0.18, 110); },
+    deny() { this.tone(200, 0.15, 'triangle', 0.15, 150); },
     gameOver() { this.tone(330, 0.8, 'sawtooth', 0.18, 55); }
 };
 try {
@@ -1161,6 +1162,41 @@ function getTowerCost() {
         config.towerCost * 0.8 : config.towerCost;
 }
 
+// 캔버스 위 안내 토스트 (배치 실패/골드 부족 피드백)
+let tdToastTimer = null;
+function showToast(msg) {
+    let el = document.getElementById('td-toast');
+    if (!el) {
+        el = document.createElement('div');
+        el.id = 'td-toast';
+        el.style.cssText = 'position:fixed;z-index:1000;background:rgba(30,40,60,0.92);color:#fff;'
+            + 'padding:8px 18px;border-radius:999px;font-size:14px;font-weight:700;'
+            + 'pointer-events:none;transition:opacity 0.25s;opacity:0;white-space:nowrap;';
+        document.body.appendChild(el);
+    }
+    const rect = canvas.getBoundingClientRect();
+    el.textContent = msg;
+    el.style.left = Math.round(rect.left + rect.width / 2) + 'px';
+    el.style.top = Math.round(rect.top + 56) + 'px';
+    el.style.transform = 'translateX(-50%)';
+    el.style.opacity = '1';
+    clearTimeout(tdToastTimer);
+    tdToastTimer = setTimeout(() => { el.style.opacity = '0'; }, 1400);
+}
+
+// 타워 버튼 히트 테스트 (버튼 인덱스 0~7, 없으면 null)
+const TOWER_BUTTON_ITEMS = [null, 'laser', 'missile', 'lightning', 'ice', 'fire', 'golden_tower', 'rainbow_shot'];
+function hitTowerButton(x, y) {
+    const buttonWidth = 120, buttonHeight = 35, spacing = 45;
+    const startX = canvas.width - 150, startY = 20;
+    if (x < startX || x > startX + buttonWidth) return null;
+    for (let i = 0; i < TOWER_BUTTON_ITEMS.length; i++) {
+        const by = startY + spacing * i;
+        if (y > by && y < by + buttonHeight) return i;
+    }
+    return null;
+}
+
 // 클릭/탭 공통 처리
 function handleCanvasClick(x, y) {
     if (gameState.currentScreen === 'home') {
@@ -1222,6 +1258,26 @@ function handleCanvasClick(x, y) {
         });
     }
     else if (gameState.currentScreen === 'game' && gameState.isRunning && !gameState.isPaused) {
+        // 타워 버튼 공통 전처리: 이중 차감 방지 + 실패 사유 피드백
+        const btnIdx = hitTowerButton(x, y);
+        if (btnIdx !== null) {
+            if (gameState.isDragging) return; // 드래그 중 버튼 재클릭 무시 (골드 이중 차감 방지)
+            const cost = getTowerCost();
+            const itemId = TOWER_BUTTON_ITEMS[btnIdx];
+            if (itemId) {
+                const item = gameState.shopItems.find(it => it.id === itemId);
+                if (!item || item.owned <= 0) {
+                    soundManager.deny();
+                    showToast('🔒 상점에서 먼저 구매해야 해요!');
+                    return;
+                }
+            }
+            if (gameState.gold < cost) {
+                soundManager.deny();
+                showToast('🪙 골드가 부족해요! (타워 건설 ' + cost + ' 골드)');
+                return;
+            }
+        }
         // 타워 버튼들 클릭 처리
         const buttonWidth = 120;
         const buttonHeight = 35;
@@ -1373,20 +1429,20 @@ function handleCanvasClick(x, y) {
                     updateUI();
                 } else {
                     // 타워를 놓을 수 없는 위치면 골드 환불
-                    const towerCost = gameState.shopItems.find(item => item.id === 'tower_discount').owned > 0 ? 
-                        config.towerCost * 0.8 : config.towerCost;
-                    gameState.gold += towerCost;
+                    gameState.gold += getTowerCost();
                     gameState.isDragging = false;
                     gameState.dragTower = null;
+                    soundManager.deny();
+                    showToast('🚫 다른 타워와 너무 가까워요! (골드 환불)');
                     updateUI();
                 }
             } else {
                 // 경로 위에 놓으려고 하면 골드 환불
-                const towerCost = gameState.shopItems.find(item => item.id === 'tower_discount').owned > 0 ?
-                    config.towerCost * 0.8 : config.towerCost;
-                gameState.gold += towerCost;
+                gameState.gold += getTowerCost();
                 gameState.isDragging = false;
                 gameState.dragTower = null;
+                soundManager.deny();
+                showToast('🚫 적이 지나가는 길에는 지을 수 없어요! (골드 환불)');
                 updateUI();
             }
         }
@@ -1437,6 +1493,17 @@ canvas.addEventListener('click', (e) => {
     handleCanvasClick(pos.x, pos.y);
 });
 
+// 버튼을 누른 채 끌어서 놓는 드래그 배치 지원:
+// mousedown이 타워 버튼 위면 즉시 드래그 시작 → 이후 필드에서 발생하는 click(=마우스 뗀 지점)이 배치를 처리
+canvas.addEventListener('mousedown', (e) => {
+    if (gameState.currentScreen !== 'game' || !gameState.isRunning || gameState.isPaused) return;
+    if (gameState.isDragging) return;
+    const pos = getCanvasPos(e);
+    if (hitTowerButton(pos.x, pos.y) !== null) {
+        handleCanvasClick(pos.x, pos.y);
+    }
+});
+
 // 마우스 이동 이벤트 (드래그 중 타워 위치 업데이트)
 canvas.addEventListener('mousemove', (e) => {
     if (gameState.isDragging && gameState.dragTower) {
@@ -1462,8 +1529,14 @@ canvas.addEventListener('contextmenu', (e) => {
 canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
     soundManager.unlock();
+    const pos = getCanvasPos(e);
+    // 터치 시작이 타워 버튼 위면 즉시 드래그 시작 (끌어서 놓기 지원)
+    if (gameState.currentScreen === 'game' && gameState.isRunning && !gameState.isPaused
+        && !gameState.isDragging && hitTowerButton(pos.x, pos.y) !== null) {
+        handleCanvasClick(pos.x, pos.y);
+        return;
+    }
     if (gameState.isDragging && gameState.dragTower) {
-        const pos = getCanvasPos(e);
         gameState.dragStartX = pos.x;
         gameState.dragStartY = pos.y;
     }
