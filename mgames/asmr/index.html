@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>쾌감 ASMR 터치</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header id="hud">
+      <div class="hud-item">
+        <span class="hud-label">스테이지</span>
+        <span id="stage-label" class="hud-value">1 / 20</span>
+      </div>
+      <div class="hud-item hud-money">
+        <span class="hud-label">코인</span>
+        <span id="money-label" class="hud-value">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-label">콤보</span>
+        <span id="combo-label" class="hud-value">-</span>
+      </div>
+    </header>
+
+    <div id="item-title">
+      <span id="item-emoji">🫧</span>
+      <span id="item-name">뽁뽁이</span>
+      <span id="item-desc">톡톡 터뜨려 보세요</span>
+    </div>
+
+    <main id="play-area">
+      <div class="ambient-blob blob-1"></div>
+      <div class="ambient-blob blob-2"></div>
+      <div id="grid"></div>
+      <div id="fx-layer"></div>
+      <div id="sound-ctrl">
+        <button id="mute-btn" title="음소거">🔊</button>
+        <input id="vol-slider" type="range" min="0" max="100" value="60" title="볼륨">
+      </div>
+    </main>
+
+    <footer id="shop">
+      <div id="shop-scroll"></div>
+    </footer>
+  </div>
+
+  <div id="start-overlay">
+    <div class="overlay-card">
+      <h1>🎧 쾌감 ASMR 터치</h1>
+      <p>물건을 만지고, 문지르고, 소리를 감상하세요.<br>코인을 모아 40가지 촉감을 수집합니다.</p>
+      <p class="hint">🔊 소리를 켜고 즐겨주세요 (이어폰 추천)<br>👆 드래그로 문지르면 연속으로 터져요</p>
+      <button id="start-btn">시작하기</button>
+    </div>
+  </div>
+
+  <div id="clear-overlay" class="hidden">
+    <div class="overlay-card">
+      <h1>🏆 스테이지 20 클리어!</h1>
+      <p>40가지 ASMR 컬렉션을 모두 완성했어요.<br>이제 마음껏 소리를 감상하세요.</p>
+      <button id="clear-close-btn">계속 만지기</button>
+    </div>
+  </div>
+
+  <div id="stage-toast" class="hidden"></div>
+
+  <script src="audio.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
