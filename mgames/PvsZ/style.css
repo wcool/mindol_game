@@ -545,6 +545,120 @@ body {
     }
 }
 
+/* 컨트롤 버튼 (음소거/일시정지/다시시작) */
+.game-controls {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.ctrl-btn {
+    background: #4299e1;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.ctrl-btn:hover {
+    background: #3182ce;
+}
+
+/* 웨이브 시작 배너 */
+.wave-banner {
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(135deg, #2980b9, #6dd5fa);
+    color: white;
+    padding: 15px 40px;
+    border-radius: 15px;
+    font-size: 26px;
+    font-weight: bold;
+    z-index: 1000;
+    box-shadow: 0 0 20px rgba(41, 128, 185, 0.7);
+    animation: banner-in 2s ease forwards;
+    pointer-events: none;
+    text-align: center;
+}
+
+@keyframes banner-in {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.7);
+    }
+
+    15% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    80% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+    }
+}
+
+/* 좀비 피격 플래시 */
+.zombie-hit {
+    filter: brightness(2.5) saturate(0.3) !important;
+}
+
+/* 좀비 사망 이펙트 */
+.death-pop {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    font-size: 40px;
+    z-index: 20;
+    pointer-events: none;
+    animation: pop-fade 0.4s ease-out forwards;
+}
+
+@keyframes pop-fade {
+    from {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(0.5);
+    }
+
+    to {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(1.6);
+    }
+}
+
+/* 총알 궤적 */
+.pea::after {
+    content: '';
+    position: absolute;
+    right: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(to left, rgba(39, 174, 96, 0.6), transparent);
+}
+
+.pea-snow::after {
+    background: linear-gradient(to left, rgba(135, 206, 235, 0.7), transparent);
+}
+
+/* 일시정지 상태 */
+.game-board.paused {
+    filter: grayscale(0.6) brightness(0.8);
+}
+
+.game-board.paused .zombie {
+    animation-play-state: paused;
+}
+
 /* 터치 디바이스 최적화 */
 @media (hover: none) and (pointer: coarse) {
 

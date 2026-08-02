@@ -17,6 +17,17 @@ let waveCount = 1;
 let zombieCount = 0;
 let gameRunning = true;
 let zombiesPassed = 0; // 끝까지 도달한 좀비 수
+let gamePaused = false; // 일시정지 상태
+let totalZombiesSpawned = 0; // 지금까지 등장한 좀비 총 수 (승리 판정용)
+let killCount = 0; // 처치한 좀비 수 (점수)
+let spawnIntervalId = null; // 좀비 생성 인터벌 ID (재시작용)
+
+// localStorage 저장 키
+const STORAGE_KEY_BEST_WAVE = 'pvsz_best_wave';
+const STORAGE_KEY_HIGH_SCORE = 'pvsz_high_score';
+const STORAGE_KEY_MUTED = 'pvsz_muted';
+let bestWave = parseInt(localStorage.getItem(STORAGE_KEY_BEST_WAVE), 10) || 1;
+let highScore = parseInt(localStorage.getItem(STORAGE_KEY_HIGH_SCORE), 10) || 0;
 
 // 식물 비용
 const PLANT_COSTS = {
@@ -60,24 +71,91 @@ const BOSS_ZOMBIE_TYPES = [
     { icon: '🐉', health: 1500, speed: 0.01, name: '드래곤좀비', size: 1.8 }
 ];
 
-// 음향 효과 (사용자가 원하는 사운드 파일 URL을 여기에 추가하세요)
-const soundEffects = {
-    shoot: '', // 예: 'sounds/shoot.mp3'
-    hit: '',   // 예: 'sounds/hit.mp3'
-    collectSun: '', // 예: 'sounds/collect.mp3'
-    plant: '', // 예: 'sounds/plant.mp3'
-    gameOver: '' // 예: 'sounds/gameover.mp3'
-};
+// 음향 효과 (Web Audio API로 합성 - 외부 파일 불필요)
+let audioCtx = null;
+let isMuted = localStorage.getItem(STORAGE_KEY_MUTED) === '1';
+
+function getAudioCtx() {
+    if (!audioCtx) {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        audioCtx = new AC();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    return audioCtx;
+}
+
+// 단일 톤 재생 헬퍼
+function tone(freq, dur, type, vol, when, slideTo) {
+    const ctx = getAudioCtx();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    const t = ctx.currentTime + (when || 0);
+    osc.type = type || 'square';
+    osc.frequency.setValueAtTime(freq, t);
+    if (slideTo) {
+        osc.frequency.exponentialRampToValueAtTime(slideTo, t + dur);
+    }
+    gain.gain.setValueAtTime(vol || 0.12, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + dur);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + dur + 0.02);
+}
 
 // 음향 효과 재생 함수
 function playSound(sound) {
-    if (soundEffects[sound] && typeof soundEffects[sound] === 'string' && soundEffects[sound].trim() !== '') {
-        try {
-            const audio = new Audio(soundEffects[sound]);
-            audio.play().catch(e => console.error("음향 효과 재생 오류:", e));
-        } catch (e) {
-            console.error("오디오 객체 생성 오류:", e);
+    if (isMuted) return;
+    try {
+        switch (sound) {
+            case 'shoot':
+                tone(880, 0.07, 'square', 0.05, 0, 440);
+                break;
+            case 'hit':
+                tone(220, 0.08, 'sawtooth', 0.07, 0, 110);
+                break;
+            case 'collectSun':
+                tone(660, 0.09, 'sine', 0.12);
+                tone(990, 0.12, 'sine', 0.12, 0.07);
+                break;
+            case 'plant':
+                tone(330, 0.08, 'triangle', 0.12);
+                tone(494, 0.1, 'triangle', 0.1, 0.06);
+                break;
+            case 'explosion':
+                tone(120, 0.4, 'sawtooth', 0.2, 0, 40);
+                tone(60, 0.5, 'square', 0.15, 0.03, 30);
+                break;
+            case 'wave':
+                tone(523, 0.12, 'triangle', 0.12);
+                tone(659, 0.12, 'triangle', 0.12, 0.1);
+                tone(784, 0.2, 'triangle', 0.12, 0.2);
+                break;
+            case 'boss':
+                tone(150, 0.3, 'sawtooth', 0.18, 0, 90);
+                tone(150, 0.3, 'sawtooth', 0.18, 0.35, 90);
+                break;
+            case 'zombieDie':
+                tone(300, 0.2, 'sawtooth', 0.09, 0, 80);
+                break;
+            case 'gameOver':
+                tone(392, 0.25, 'triangle', 0.15);
+                tone(311, 0.25, 'triangle', 0.15, 0.25);
+                tone(233, 0.5, 'triangle', 0.15, 0.5);
+                break;
+            case 'win':
+                tone(523, 0.15, 'triangle', 0.15);
+                tone(659, 0.15, 'triangle', 0.15, 0.15);
+                tone(784, 0.15, 'triangle', 0.15, 0.3);
+                tone(1047, 0.4, 'triangle', 0.15, 0.45);
+                break;
         }
+    } catch (e) {
+        // 오디오 미지원 환경에서는 무시
     }
 }
 
@@ -85,9 +163,113 @@ function playSound(sound) {
 function init() {
     createGrid();
     setupEventListeners();
+    setupControlButtons();
+    updateBestWaveDisplay();
     startGameLoop();
     spawnZombies();
     generateSun();
+}
+
+// 컨트롤 버튼 (음소거 / 일시정지 / 다시시작) 설정
+function setupControlButtons() {
+    const muteBtn = document.getElementById('muteBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const restartBtn = document.getElementById('restartBtn');
+
+    if (muteBtn) {
+        muteBtn.textContent = isMuted ? '🔇' : '🔊';
+        muteBtn.addEventListener('click', () => {
+            isMuted = !isMuted;
+            localStorage.setItem(STORAGE_KEY_MUTED, isMuted ? '1' : '0');
+            muteBtn.textContent = isMuted ? '🔇' : '🔊';
+            if (!isMuted) playSound('collectSun');
+        });
+    }
+
+    if (pauseBtn) {
+        pauseBtn.addEventListener('click', () => {
+            if (!gameRunning) return;
+            gamePaused = !gamePaused;
+            pauseBtn.textContent = gamePaused ? '▶️ 계속' : '⏸️ 일시정지';
+            document.getElementById('gameBoard').classList.toggle('paused', gamePaused);
+        });
+    }
+
+    if (restartBtn) {
+        restartBtn.addEventListener('click', restartGame);
+    }
+
+    // 모바일 브라우저: 첫 터치/클릭에서 오디오 잠금 해제
+    document.addEventListener('pointerdown', () => { getAudioCtx(); }, { once: true });
+}
+
+// 게임 다시시작
+function restartGame() {
+    if (spawnIntervalId) {
+        clearInterval(spawnIntervalId);
+        spawnIntervalId = null;
+    }
+
+    // 남아 있는 요소 정리
+    zombies.forEach(z => {
+        if (z.healthBar) z.healthBar.remove();
+        z.element.remove();
+    });
+    peas.forEach(p => p.element.remove());
+    document.querySelectorAll('.sun, .boss-alert, .wave-banner, .death-pop').forEach(el => el.remove());
+
+    // 상태 초기화
+    zombies = [];
+    peas = [];
+    plants = [];
+    suns = [];
+    sunCount = 50;
+    waveCount = 1;
+    zombieCount = 0;
+    zombiesPassed = 0;
+    totalZombiesSpawned = 0;
+    killCount = 0;
+    bossIndex = 0;
+    selectedPlant = null;
+    gamePaused = false;
+    gameRunning = true;
+
+    document.querySelectorAll('.plant-card').forEach(c => c.classList.remove('selected'));
+    const pauseBtn = document.getElementById('pauseBtn');
+    if (pauseBtn) pauseBtn.textContent = '⏸️ 일시정지';
+    const status = document.getElementById('gameStatus');
+    status.className = 'game-status';
+    status.textContent = '';
+    document.getElementById('gameBoard').classList.remove('paused');
+
+    createGrid();
+    updateSunCounter();
+    updateWaveCount();
+    updateZombieCount();
+    updateBestWaveDisplay();
+    spawnZombies();
+    playSound('wave');
+}
+
+// 최고 기록 저장
+function saveRecords() {
+    if (waveCount > bestWave) {
+        bestWave = waveCount;
+        localStorage.setItem(STORAGE_KEY_BEST_WAVE, String(bestWave));
+    }
+    if (killCount > highScore) {
+        highScore = killCount;
+        localStorage.setItem(STORAGE_KEY_HIGH_SCORE, String(highScore));
+    }
+    updateBestWaveDisplay();
+}
+
+// 최고 기록 표시 갱신
+function updateBestWaveDisplay() {
+    const el = document.getElementById('bestWave');
+    if (el) el.textContent = bestWave;
+    const scoreEl = document.getElementById('highScore');
+    if (scoreEl) scoreEl.textContent = highScore;
 }
 
 // 그리드 생성
@@ -248,41 +430,53 @@ function placePlant(row, col, type) {
         setTimeout(() => {
             explodeDoomshroom(row, col);
         }, 500);
+    } else if (type === 'gloomshroom') {
+        // 글로움슈룸은 주변 좀비에게 지속 피해
+        setupGloomshroom(row, col, gameBoard[row][col].plant);
     }
 }
 
 // 좀비 생성
 function spawnZombies() {
     if (!gameRunning) return;
-    
-    const spawnInterval = setInterval(() => {
+
+    if (spawnIntervalId) clearInterval(spawnIntervalId);
+    spawnIntervalId = setInterval(() => {
         if (!gameRunning) {
-            clearInterval(spawnInterval);
+            clearInterval(spawnIntervalId);
+            spawnIntervalId = null;
             return;
         }
-        
+        if (gamePaused) return; // 일시정지 중에는 생성하지 않음
+
         const row = Math.floor(Math.random() * ROWS);
-        
+
         // 보스 좀비 생성 확률 감소 (웨이브 5 이상일 때 5% 확률)
         const bossChance = waveCount >= 5 ? 0.05 : 0;
         if (Math.random() < bossChance) {
             const boss = createBossZombie(row);
             zombies.push(boss);
             zombieCount++;
+            totalZombiesSpawned++;
             updateZombieCount();
             // 보스 등장 알림
-            showBossAlert(boss.type.name);
+            showBossAlert(boss.type);
+            playSound('boss');
         } else {
             const zombie = createZombie(row);
             zombies.push(zombie);
             zombieCount++;
+            totalZombiesSpawned++;
             updateZombieCount();
         }
-        
-        // 웨이브 증가 (더 빠르게)
-        if (zombieCount % 3 === 0) {
+
+        // 웨이브 증가 (등장한 좀비 3마리마다)
+        if (totalZombiesSpawned % 3 === 0) {
             waveCount++;
             updateWaveCount();
+            showWaveBanner(waveCount);
+            playSound('wave');
+            saveRecords();
         }
     }, 10000); // 10초마다 좀비 생성
 }
@@ -382,6 +576,18 @@ function showBossAlert(bossName) {
     }, 3000);
 }
 
+// 웨이브 시작 배너
+function showWaveBanner(wave) {
+    const banner = document.createElement('div');
+    banner.className = 'wave-banner';
+    banner.textContent = `🌊 웨이브 ${wave} 시작!`;
+    document.body.appendChild(banner);
+
+    setTimeout(() => {
+        banner.remove();
+    }, 2000);
+}
+
 // 완두콩 발사
 function shootPea(plant) {
     const now = Date.now();
@@ -406,30 +612,31 @@ function shootPea(plant) {
     let left = (plant.col + 1) * cellWidth;
     let top = plant.row * cellHeight + cellHeight / 2;
     
+    // 얼음 계열 총알 스타일 (버그 수정: 이전에는 선언 전의 peaObj를 참조해 오류 발생)
     if (plant.type === 'snowpea' || plant.type === 'icepeashooter') {
         pea.style.background = '#87ceeb';
         pea.style.border = '2px solid #4682b4';
         pea.style.boxShadow = '0 0 5px rgba(135, 206, 235, 0.8)';
-        peaObj.isSnow = true;
+        pea.classList.add('pea-snow');
     }
-    
+
     pea.style.left = left + '%';
     pea.style.top = top + '%';
     pea.style.transform = 'translate(-50%, -50%)';
     pea.style.position = 'absolute';
-    
+
     board.appendChild(pea);
-    
+
     let damage = 18; // 기본 피해 +3 (15 -> 18)
     if (plant.type === 'repeater' || plant.type === 'gatling') damage = 28; // +3
     else if (plant.type === 'threepeater') damage = 23; // +3
-    
+
     const peaObj = {
         element: pea,
         row: plant.row,
         left: left,
         speed: 3,
-        isSnow: plant.type === 'snowpea',
+        isSnow: plant.type === 'snowpea' || plant.type === 'icepeashooter',
         isFire: plant.type === 'torchwood',
         damage: damage
     };
@@ -510,8 +717,8 @@ function createPea(board, left, top, row, damage) {
 // 게임 루프
 function startGameLoop() {
     setInterval(() => {
-        if (!gameRunning) return;
-        
+        if (!gameRunning || gamePaused) return;
+
         updateZombies();
         updatePeas();
         checkCollisions();
@@ -520,29 +727,61 @@ function startGameLoop() {
     }, 50);
 }
 
+// 좀비 제거 헬퍼 (체력바/요소 정리, 카운트 갱신, 처치 시 이펙트)
+function destroyZombie(zombie, killed) {
+    if (zombie.healthBar) zombie.healthBar.remove();
+
+    if (killed) {
+        killCount++;
+        playSound('zombieDie');
+        saveRecords();
+        // 사망 이펙트
+        const pop = document.createElement('div');
+        pop.className = 'death-pop';
+        pop.textContent = '💥';
+        pop.style.left = zombie.element.style.left;
+        pop.style.top = zombie.element.style.top;
+        document.getElementById('gameBoard').appendChild(pop);
+        setTimeout(() => pop.remove(), 400);
+    }
+
+    zombie.element.remove();
+    const idx = zombies.indexOf(zombie);
+    if (idx > -1) zombies.splice(idx, 1);
+    zombieCount--;
+    updateZombieCount();
+}
+
+// 좀비 피격 플래시
+function flashZombie(zombie) {
+    zombie.element.classList.add('zombie-hit');
+    setTimeout(() => {
+        zombie.element.classList.remove('zombie-hit');
+    }, 150);
+}
+
 // 좀비 업데이트
 function updateZombies() {
-    zombies.forEach((zombie, index) => {
+    // 뒤에서부터 순회 (제거 시 인덱스 건너뛰기 방지)
+    for (let i = zombies.length - 1; i >= 0; i--) {
+        const zombie = zombies[i];
         const cellWidth = 100 / COLS;
         const cellHeight = 100 / ROWS;
-        
+
         // 좀비의 현재 열 계산 (정확한 위치 기반)
         // 좀비의 left는 셀 중앙 기준이므로, 셀 범위 내에 있는지 확인
         const zombieCol = Math.floor((zombie.left / 100) * COLS);
         const currentCol = Math.min(Math.max(0, zombieCol), COLS - 1);
-        
+
         if (zombie.isHypnotized) {
             // 최면 상태의 좀비는 오른쪽으로 이동
             zombie.left += Math.abs(zombie.speed); // 항상 양의 속도로 오른쪽으로 이동
             zombie.element.style.left = zombie.left + '%';
-            
+
             // 화면 밖으로 나가면 제거 (끝까지 도달해도 게임 오버 아님)
             if (zombie.left > 110) {
-                if (zombie.healthBar) zombie.healthBar.remove();
-                zombie.element.remove();
-                zombies.splice(index, 1);
-                zombieCount--;
-                updateZombieCount();
+                destroyZombie(zombie, false);
+                continue;
             }
         } else {
             // 같은 행의 식물 확인 - 좀비가 식물이 있는 셀 범위 내에 있는지 확인
@@ -580,46 +819,44 @@ function updateZombies() {
             
             // 좀비가 화면 밖으로 나가면 제거
             if (zombie.left < -10) {
-                if (zombie.healthBar) zombie.healthBar.remove();
-                zombie.element.remove();
-                zombies.splice(index, 1);
-                zombieCount--;
-                updateZombieCount();
+                destroyZombie(zombie, false);
+                continue;
             }
         }
-        
+
         // 좀비 위치 업데이트 (항상 중앙 정렬)
         const top = zombie.row * cellHeight + cellHeight / 2;
         zombie.element.style.top = top + '%';
-        
+
         // 체력 바 업데이트
         updateZombieHealthBar(zombie);
-    });
+    }
 }
 
 // 완두콩 업데이트
 function updatePeas() {
-    peas.forEach((pea, index) => {
+    // 뒤에서부터 순회 (제거 시 인덱스 건너뛰기 방지)
+    for (let i = peas.length - 1; i >= 0; i--) {
+        const pea = peas[i];
         pea.left += pea.speed;
-        const cellWidth = 100 / COLS;
         const cellHeight = 100 / ROWS;
-        const row = pea.row;
-        const top = row * cellHeight + cellHeight / 2;
-        
+        const top = pea.row * cellHeight + cellHeight / 2;
+
         pea.element.style.left = pea.left + '%';
         pea.element.style.top = top + '%';
-        
+
         // 완두콩이 화면 밖으로 나가면 제거
         if (pea.left > 110) {
             pea.element.remove();
-            peas.splice(index, 1);
+            peas.splice(i, 1);
         }
-    });
-    
+    }
+
     // 완두콩 발사 (계속 발사하도록 수정)
     plants.forEach(plant => {
-        if (plant.type === 'peashooter' || plant.type === 'snowpea' || plant.type === 'repeater' || 
-            plant.type === 'threepeater' || plant.type === 'gatling' || plant.type === 'peashooter2') {
+        if (plant.type === 'peashooter' || plant.type === 'snowpea' || plant.type === 'repeater' ||
+            plant.type === 'threepeater' || plant.type === 'gatling' || plant.type === 'peashooter2' ||
+            plant.type === 'icepeashooter') {
             // 같은 행에 좀비가 있는지 확인
             const hasZombieInRow = zombies.some(z => z.row === plant.row);
             if (hasZombieInRow) {
@@ -631,61 +868,57 @@ function updatePeas() {
 
 // 충돌 감지
 function checkCollisions() {
-    peas.forEach((pea, peaIndex) => {
-        zombies.forEach((zombie, zombieIndex) => {
-            if (pea.row === zombie.row) {
-                const peaLeft = pea.left;
-                const zombieLeft = zombie.left;
-                
-                // 충돌 감지
-                if (Math.abs(peaLeft - zombieLeft) < 3) {
-                    playSound('hit'); // 좀비 피격 효과음
-                    // 좀비 체력 감소
-                    let damage = pea.damage || 18; // 기본 +3
-                    
-                    // 불 총알은 더 큰 피해
-                    if (pea.isFire) {
-                        damage = 30;
-                    }
-                    
-                    zombie.health -= damage;
-                    
-                    // 스노우피는 좀비 속도 감소
-                    if (pea.isSnow) {
-                        zombie.speed = Math.max(zombie.speed * 0.5, 0.03);
-                    }
-                    
-                    // 완두콩 제거
-                    pea.element.remove();
-                    peas.splice(peaIndex, 1);
-                    
-                    // 좀비 체력이 0 이하면 제거
-                    if (zombie.health <= 0) {
-                        if (zombie.healthBar) zombie.healthBar.remove();
-                        zombie.element.remove();
-                        zombies.splice(zombieIndex, 1);
-                        zombieCount--;
-                        updateZombieCount();
-                    }
+    // 완두콩-좀비 충돌 (뒤에서부터 순회하여 제거 시 인덱스 문제 방지)
+    for (let pi = peas.length - 1; pi >= 0; pi--) {
+        const pea = peas[pi];
+        for (let zi = zombies.length - 1; zi >= 0; zi--) {
+            const zombie = zombies[zi];
+            if (pea.row !== zombie.row) continue;
+
+            // 충돌 감지
+            if (Math.abs(pea.left - zombie.left) < 3) {
+                playSound('hit'); // 좀비 피격 효과음
+                // 좀비 체력 감소
+                let damage = pea.damage || 18; // 기본 +3
+
+                // 불 총알은 더 큰 피해
+                if (pea.isFire) {
+                    damage = 30;
                 }
+
+                zombie.health -= damage;
+                flashZombie(zombie); // 피격 플래시
+
+                // 스노우피는 좀비 속도 감소
+                if (pea.isSnow) {
+                    zombie.speed = Math.max(zombie.speed * 0.5, 0.03);
+                }
+
+                // 완두콩 제거
+                pea.element.remove();
+                peas.splice(pi, 1);
+
+                // 좀비 체력이 0 이하면 제거
+                if (zombie.health <= 0) {
+                    destroyZombie(zombie, true);
+                }
+                break; // 이 완두콩은 소멸했으므로 다음 완두콩으로
             }
-        });
-    });
-    
+        }
+    }
+
     // 좀비와 식물 충돌 (공격) - 일반 좀비만 식물 공격
-    zombies.forEach((zombie, zombieIndex) => {
+    zombies.forEach(zombie => {
         if (!zombie.isHypnotized) { // 최면 상태가 아닌 좀비만 식물 공격
-            plants.forEach((plant, plantIndex) => {
+            for (let pi = plants.length - 1; pi >= 0; pi--) {
+                const plant = plants[pi];
                 if (zombie.row === plant.row) {
                     const cellWidth = 100 / COLS;
-                    // 좀비의 현재 열 계산
-                    const zombieCol = Math.floor((zombie.left / 100) * COLS);
-                    const currentCol = Math.min(Math.max(0, zombieCol), COLS - 1);
-                    
+
                     // 식물이 있는 셀의 위치 범위
                     const plantCellLeft = plant.col * cellWidth;
                     const plantCellRight = (plant.col + 1) * cellWidth;
-                    
+
                     // 좀비가 식물 셀 범위 내에 있으면 공격
                     // 좀비가 식물 셀에 도달했거나 약간 앞에 있어도 공격 가능하도록
                     if (zombie.left <= plantCellRight && zombie.left >= plantCellLeft - cellWidth * 0.2) {
@@ -693,55 +926,50 @@ function checkCollisions() {
                         const attackDamage = zombie.isBoss ? 2 : 1;
                         plant.health -= attackDamage;
                         updatePlantHealthBar(plant);
-                        
+
                         // 식물이 죽으면 제거
                         if (plant.health <= 0) {
                             if (plant.healthBar) plant.healthBar.remove();
                             plant.element.remove();
                             gameBoard[plant.row][plant.col].cell.classList.remove('has-plant');
                             gameBoard[plant.row][plant.col].plant = null;
-                            plants.splice(plantIndex, 1);
+                            plants.splice(pi, 1);
                         }
                     }
                 }
-            });
+            }
         }
     });
 
     // 최면 좀비와 일반 좀비 충돌 (최면 좀비가 일반 좀비 공격)
-    zombies.forEach((hypnotizedZombie, hypIndex) => {
+    zombies.forEach(hypnotizedZombie => {
         if (hypnotizedZombie.isHypnotized) {
-            zombies.forEach((otherZombie, otherIndex) => {
+            for (let oi = zombies.length - 1; oi >= 0; oi--) {
+                const otherZombie = zombies[oi];
                 if (!otherZombie.isHypnotized && hypnotizedZombie.row === otherZombie.row) {
-                    const hypZombieLeft = hypnotizedZombie.left;
-                    const otherZombieLeft = otherZombie.left;
-
                     // 충돌 감지 (최면 좀비가 일반 좀비를 공격)
-                    if (Math.abs(hypZombieLeft - otherZombieLeft) < 5) { // 겹쳤을 때 공격
+                    if (Math.abs(hypnotizedZombie.left - otherZombie.left) < 5) { // 겹쳤을 때 공격
                         const now = Date.now();
                         if (now - hypnotizedZombie.lastAttack > 1000) { // 1초에 한 번 공격
                             hypnotizedZombie.lastAttack = now;
                             // 일반 좀비 체력 감소
                             otherZombie.health -= hypnotizedZombie.attackPower; // 최면 좀비의 공격력 사용
+                            flashZombie(otherZombie);
 
                             // 공격 애니메이션/피드백
                             hypnotizedZombie.element.style.transform = 'translate(-50%, -50%) scale(1.1)';
                             setTimeout(() => {
                                 hypnotizedZombie.element.style.transform = 'translate(-50%, -50%) scale(1)';
                             }, 100);
-                            
+
                             // 일반 좀비 체력이 0 이하면 제거
                             if (otherZombie.health <= 0) {
-                                if (otherZombie.healthBar) otherZombie.healthBar.remove();
-                                otherZombie.element.remove();
-                                zombies.splice(otherIndex, 1);
-                                zombieCount--;
-                                updateZombieCount();
+                                destroyZombie(otherZombie, true);
                             }
                         }
                     }
                 }
-            });
+            }
         }
     });
 }
@@ -786,8 +1014,8 @@ function createSun(row, col) {
 // 랜덤 태양 생성
 function generateSun() {
     setInterval(() => {
-        if (!gameRunning) return;
-        
+        if (!gameRunning || gamePaused) return;
+
         const row = Math.floor(Math.random() * ROWS);
         const col = Math.floor(Math.random() * COLS);
         createSun(row, col);
@@ -796,7 +1024,7 @@ function generateSun() {
 
 // 해바라기 태양 생성 처리
 setInterval(() => {
-    if (!gameRunning) return;
+    if (!gameRunning || gamePaused) return;
     
     plants.forEach(plant => {
         if (plant.type === 'sunflower') {
@@ -838,8 +1066,9 @@ function updatePlantCards() {
 
 // 게임 오버 체크
 function checkGameOver() {
-    // 모든 좀비를 물리쳤고, 일정 시간 동안 새로운 좀비가 없으면 승리
-    if (zombies.length === 0 && zombieCount >= 20) {
+    // 총 20마리 이상 등장한 뒤 모든 좀비를 물리치면 승리
+    // (버그 수정: 이전에는 남은 좀비 수(zombieCount)로 비교해 승리가 불가능했음)
+    if (zombies.length === 0 && totalZombiesSpawned >= 20) {
         gameOver(true);
     }
 }
@@ -927,25 +1156,24 @@ function updateZombieHealthBar(zombie) {
 function explodeCherryBomb(row, col) {
     const plant = gameBoard[row][col].plant;
     if (!plant || plant.type !== 'cherrybomb') return;
-    
-    // 주변 좀비에게 피해
-    zombies.forEach((zombie, index) => {
-        const zombieRow = zombie.row;
+
+    playSound('explosion'); // 폭발 효과음
+
+    // 주변 좀비에게 피해 (뒤에서부터 순회하여 여러 마리 동시 처치 가능)
+    for (let i = zombies.length - 1; i >= 0; i--) {
+        const zombie = zombies[i];
         const zombieCol = Math.floor((zombie.left / 100) * COLS);
-        
+
         // 같은 행 또는 인접한 행, 그리고 가까운 열
-        if (Math.abs(zombieRow - row) <= 1 && Math.abs(zombieCol - col) <= 1) {
+        if (Math.abs(zombie.row - row) <= 1 && Math.abs(zombieCol - col) <= 1) {
             zombie.health -= 100;
+            flashZombie(zombie);
             if (zombie.health <= 0) {
-                if (zombie.healthBar) zombie.healthBar.remove();
-                zombie.element.remove();
-                zombies.splice(index, 1);
-                zombieCount--;
-                updateZombieCount();
+                destroyZombie(zombie, true);
             }
         }
-    });
-    
+    }
+
     // 폭발 애니메이션
     plant.element.textContent = '💥';
     setTimeout(() => {
@@ -964,21 +1192,21 @@ function explodeJalapeno(row) {
     if (!plant || !plant.plant) return;
     
     const col = plant.plant.col;
-    
-    // 같은 행의 모든 좀비에게 피해
-    zombies.forEach((zombie, index) => {
+
+    playSound('explosion'); // 폭발 효과음
+
+    // 같은 행의 모든 좀비에게 피해 (뒤에서부터 순회)
+    for (let i = zombies.length - 1; i >= 0; i--) {
+        const zombie = zombies[i];
         if (zombie.row === row) {
             zombie.health -= 200;
+            flashZombie(zombie);
             if (zombie.health <= 0) {
-                if (zombie.healthBar) zombie.healthBar.remove();
-                zombie.element.remove();
-                zombies.splice(index, 1);
-                zombieCount--;
-                updateZombieCount();
+                destroyZombie(zombie, true);
             }
         }
-    });
-    
+    }
+
     // 폭발 애니메이션
     plant.plant.element.textContent = '🔥';
     setTimeout(() => {
@@ -998,29 +1226,24 @@ function setupSquash(row, col, plant) {
             clearInterval(checkSquash);
             return;
         }
-        
+        if (!gameRunning || gamePaused) return;
+
         // 같은 행의 좀비 확인
         const cellWidth = 100 / COLS;
         const plantLeft = col * cellWidth;
-        const nearbyZombie = zombies.find(z => 
-            z.row === row && 
+        const nearbyZombie = zombies.find(z =>
+            z.row === row &&
             Math.abs(z.left - plantLeft) < cellWidth * 2
         );
-        
+
         if (nearbyZombie) {
             // 스쿼시 공격
+            playSound('explosion');
             nearbyZombie.health -= 500;
             if (nearbyZombie.health <= 0) {
-                if (nearbyZombie.healthBar) nearbyZombie.healthBar.remove();
-                nearbyZombie.element.remove();
-                const index = zombies.indexOf(nearbyZombie);
-                if (index > -1) {
-                    zombies.splice(index, 1);
-                    zombieCount--;
-                    updateZombieCount();
-                }
+                destroyZombie(nearbyZombie, true);
             }
-            
+
             // 스쿼시 제거
             plant.element.textContent = '💥';
             setTimeout(() => {
@@ -1043,35 +1266,71 @@ function setupChomper(row, col, plant) {
             clearInterval(checkChomper);
             return;
         }
-        
+        if (!gameRunning || gamePaused) return;
+
         // 같은 행의 좀비 확인 (같은 열 또는 바로 앞)
         const cellWidth = 100 / COLS;
         const plantLeft = col * cellWidth;
-        const nearbyZombie = zombies.find(z => 
-            z.row === row && 
+        const nearbyZombie = zombies.find(z =>
+            z.row === row &&
             Math.abs(z.left - plantLeft) < cellWidth * 1.5
         );
-        
+
         if (nearbyZombie && !plant.isEating) {
             // 촘퍼가 좀비를 잡아먹음
             plant.isEating = true;
             plant.element.textContent = '😋';
-            
+            playSound('hit');
+
             setTimeout(() => {
-                if (nearbyZombie.healthBar) nearbyZombie.healthBar.remove();
-                nearbyZombie.element.remove();
-                const index = zombies.indexOf(nearbyZombie);
-                if (index > -1) {
-                    zombies.splice(index, 1);
-                    zombieCount--;
-                    updateZombieCount();
+                if (zombies.indexOf(nearbyZombie) > -1) {
+                    destroyZombie(nearbyZombie, true);
                 }
-                
+
                 plant.isEating = false;
                 plant.element.textContent = '🪷';
             }, 2000);
         }
     }, 100);
+}
+
+// 글로움슈룸 설정 (주변 좀비에게 지속 피해)
+function setupGloomshroom(row, col, plant) {
+    const checkGloom = setInterval(() => {
+        if (!plant || gameBoard[row][col].plant !== plant) {
+            clearInterval(checkGloom);
+            return;
+        }
+        if (!gameRunning || gamePaused) return;
+
+        const cellWidth = 100 / COLS;
+        const plantLeft = (col + 0.5) * cellWidth;
+        let hitAny = false;
+
+        // 인접 행 포함 주변 좀비에게 피해 (뒤에서부터 순회)
+        for (let i = zombies.length - 1; i >= 0; i--) {
+            const z = zombies[i];
+            if (z.isHypnotized) continue;
+            if (Math.abs(z.row - row) <= 1 && Math.abs(z.left - plantLeft) < cellWidth * 1.5) {
+                z.health -= 8;
+                flashZombie(z);
+                hitAny = true;
+                if (z.health <= 0) {
+                    destroyZombie(z, true);
+                }
+            }
+        }
+
+        if (hitAny) {
+            playSound('hit');
+            plant.element.textContent = '🌫️';
+            setTimeout(() => {
+                if (gameBoard[row][col].plant === plant) {
+                    plant.element.textContent = '💨';
+                }
+            }, 200);
+        }
+    }, 1000);
 }
 
 // 최면 버섯 설정
@@ -1123,24 +1382,23 @@ function explodeDoomshroom(row, col) {
     const plant = gameBoard[row][col].plant;
     if (!plant || plant.type !== 'doomshroom') return;
     
-    // 넓은 범위의 좀비에게 피해
-    zombies.forEach((zombie, index) => {
-        const zombieRow = zombie.row;
+    playSound('explosion'); // 폭발 효과음
+
+    // 넓은 범위의 좀비에게 피해 (뒤에서부터 순회)
+    for (let i = zombies.length - 1; i >= 0; i--) {
+        const zombie = zombies[i];
         const zombieCol = Math.floor((zombie.left / 100) * COLS);
-        
+
         // 2칸 반경 내의 모든 좀비에게 피해
-        if (Math.abs(zombieRow - row) <= 2 && Math.abs(zombieCol - col) <= 2) {
+        if (Math.abs(zombie.row - row) <= 2 && Math.abs(zombieCol - col) <= 2) {
             zombie.health -= 500; // 큰 피해
+            flashZombie(zombie);
             if (zombie.health <= 0) {
-                if (zombie.healthBar) zombie.healthBar.remove();
-                zombie.element.remove();
-                zombies.splice(index, 1);
-                zombieCount--;
-                updateZombieCount();
+                destroyZombie(zombie, true);
             }
         }
-    });
-    
+    }
+
     // 폭발 애니메이션
     plant.element.textContent = '💥';
     setTimeout(() => {
@@ -1156,10 +1414,13 @@ function explodeDoomshroom(row, col) {
 // 게임 오버
 function gameOver(won) {
     gameRunning = false;
-    playSound('gameOver'); // 게임 오버 효과음
+    gamePaused = false;
+    playSound(won ? 'win' : 'gameOver'); // 게임 오버/승리 효과음
+    saveRecords(); // 최고 기록 저장
     const status = document.getElementById('gameStatus');
     status.className = 'game-status ' + (won ? 'win' : 'lose');
-    status.textContent = won ? '🎉 승리! 🎉' : '💀 게임 오버 💀';
+    status.textContent = (won ? '🎉 승리! 🎉' : '💀 게임 오버 💀') +
+        ` (웨이브 ${waveCount} · 처치 ${killCount}마리)`;
 }
 
 // 게임 시작
