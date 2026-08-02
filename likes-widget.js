@@ -46,11 +46,12 @@ const LikesWidget = (() => {
   }
 
   async function fetchAll() {
+    // 실패 시 null 반환 — 0으로 표시하면 리셋된 것처럼 보이므로 '--' 유지에 사용
     try {
       const r = await fetch(API_BASE);
-      if (!r.ok) return {};
+      if (!r.ok) return null;
       return await r.json();
-    } catch { return {}; }
+    } catch { return null; }
   }
 
   async function postLike(game) {
@@ -137,16 +138,16 @@ const LikesWidget = (() => {
     const allCounts = await fetchAll();
     const liked = getLiked();
 
-    // 총 좋아요 수 계산 및 표시
+    // 총 좋아요 수 계산 및 표시 (API 실패 시 '--' 유지)
     const totalCountEl = document.getElementById('total-likes-count');
-    if (totalCountEl) {
+    if (totalCountEl && allCounts) {
       const totalLikes = Object.values(allCounts).reduce((sum, count) => sum + (Number(count) || 0), 0);
       totalCountEl.textContent = totalLikes.toLocaleString();
     }
 
     containers.forEach(container => {
       const game = container.dataset.likeGame;
-      const count = allCounts[game] ?? null;
+      const count = allCounts ? (allCounts[game] ?? null) : null;
       const alreadyLiked = liked.includes(game);
       const btn = buildButton(game, count, alreadyLiked);
       container.appendChild(btn);

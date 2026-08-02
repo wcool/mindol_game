@@ -22,7 +22,8 @@ export default async function handler(req, res) {
 
   const VALID_GAMES = [
     'pikmin', 'PvsZ', 'towerdefence', 'dama',
-    'pickmachine', 'tetris', 'streetcross', 'maze', 'zump_sun'
+    'pickmachine', 'tetris', 'streetcross', 'maze', 'zump_sun',
+    'asmr', 'monster_rpg'
   ];
 
   try {
