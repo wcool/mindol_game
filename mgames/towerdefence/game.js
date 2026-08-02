@@ -20,6 +20,11 @@ const gameState = {
     dragStartX: 0,
     dragStartY: 0,
     selectedTowerType: 'basic', // 선택된 타워 타입
+    selectedTower: null, // 선택된 (배치된) 타워
+    gameSpeed: 1, // 게임 속도 (x1 / x2)
+    gameTime: 0, // 가상 게임 시간 (ms)
+    particles: [], // 사망 파티클
+    lifeFlash: 0, // 생명력 잃을 때 화면 붉은 효과
     shopItems: [
         { id: 'damage', name: '공격력 강화', cost: 50, effect: '타워 공격력 +10', owned: 0 },
         { id: 'range', name: '범위 확장', cost: 75, effect: '타워 범위 +20', owned: 0 },
@@ -78,6 +83,99 @@ const config = {
     gridSize: 40
 };
 
+// localStorage 저장 키
+const STORAGE_KEYS = {
+    highScore: 'towerdefence_highScore',
+    bestWave: 'towerdefence_bestWave',
+    muted: 'towerdefence_muted'
+};
+
+function loadBest() {
+    let score = 0;
+    let wave = 0;
+    try {
+        score = parseInt(localStorage.getItem(STORAGE_KEYS.highScore), 10) || 0;
+        wave = parseInt(localStorage.getItem(STORAGE_KEYS.bestWave), 10) || 0;
+    } catch (err) { /* localStorage 사용 불가 시 무시 */ }
+    return { score: score, wave: wave };
+}
+
+function saveBest() {
+    try {
+        const best = loadBest();
+        const totalWave = (gameState.stage - 1) * 10 + Math.min(gameState.wave, 10);
+        if (gameState.score > best.score) {
+            localStorage.setItem(STORAGE_KEYS.highScore, String(gameState.score));
+        }
+        if (totalWave > best.wave) {
+            localStorage.setItem(STORAGE_KEYS.bestWave, String(totalWave));
+        }
+    } catch (err) { /* localStorage 사용 불가 시 무시 */ }
+}
+
+// 사운드 매니저 (Web Audio API 합성음, 외부 파일 없음)
+const soundManager = {
+    audioCtx: null,
+    muted: false,
+    unlock() {
+        if (!this.audioCtx) {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (AC) {
+                try { this.audioCtx = new AC(); } catch (err) { this.audioCtx = null; }
+            }
+        }
+        if (this.audioCtx && this.audioCtx.state === 'suspended') {
+            this.audioCtx.resume();
+        }
+    },
+    tone(freq, duration, type, volume, slideTo) {
+        if (this.muted) return;
+        this.unlock();
+        if (!this.audioCtx) return;
+        try {
+            const t = this.audioCtx.currentTime;
+            const osc = this.audioCtx.createOscillator();
+            const gain = this.audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, t);
+            if (slideTo) {
+                osc.frequency.exponentialRampToValueAtTime(slideTo, t + duration);
+            }
+            gain.gain.setValueAtTime(volume, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+            osc.connect(gain);
+            gain.connect(this.audioCtx.destination);
+            osc.start(t);
+            osc.stop(t + duration);
+        } catch (err) { /* 사운드 실패는 게임에 영향 없음 */ }
+    },
+    shoot() { this.tone(900, 0.07, 'square', 0.04, 450); },
+    place() { this.tone(320, 0.15, 'triangle', 0.18, 640); },
+    sell() { this.tone(500, 0.15, 'triangle', 0.15, 250); },
+    death() { this.tone(420, 0.2, 'sawtooth', 0.1, 90); },
+    waveStart() { this.tone(440, 0.18, 'triangle', 0.15, 880); },
+    lifeLost() { this.tone(220, 0.3, 'sawtooth', 0.18, 110); },
+    gameOver() { this.tone(330, 0.8, 'sawtooth', 0.18, 55); }
+};
+try {
+    soundManager.muted = localStorage.getItem(STORAGE_KEYS.muted) === '1';
+} catch (err) { /* 무시 */ }
+
+// 사망 파티클 생성
+function spawnParticles(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+        gameState.particles.push({
+            x: x,
+            y: y,
+            vx: (Math.random() - 0.5) * 4,
+            vy: (Math.random() - 0.5) * 4 - 1,
+            life: 30,
+            maxLife: 30,
+            color: color
+        });
+    }
+}
+
 // Canvas 설정
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -105,7 +203,8 @@ class Tower {
         this.lastFire = 0;
         this.target = null;
         this.criticalChance = gameState.shopItems.find(item => item.id === 'critical').owned * 0.15 + gameState.shopItems.find(item => item.id === 'lucky_shot').owned * 0.25;
-        
+        this.level = 1;
+
         // 타워 타입 결정 (가장 높은 레벨의 아이템 기준)
         this.towerType = this.getTowerType();
     }
@@ -120,6 +219,21 @@ class Tower {
         if (items.find(item => item.id === 'fire').owned > 0) return 'fire';
         if (items.find(item => item.id === 'rainbow_shot').owned > 0) return 'rainbow';
         return 'basic';
+    }
+
+    upgradeCost() {
+        return 40 + (this.level - 1) * 30;
+    }
+
+    sellValue() {
+        return 30 + (this.level - 1) * 20;
+    }
+
+    upgrade() {
+        this.level++;
+        this.damage += 10;
+        this.range += 10;
+        this.fireRate = Math.max(200, this.fireRate * 0.9);
     }
 
     update(enemies, currentTime) {
@@ -180,6 +294,7 @@ class Tower {
             gameState.projectiles.push(new Projectile(
                 this.x, this.y, this.target, specialDamage, isCritical, projectileType
             ));
+            soundManager.shoot();
             this.lastFire = currentTime;
         }
     }
@@ -243,6 +358,13 @@ class Tower {
         ctx.font = '20px Arial';
         ctx.textAlign = 'center';
         ctx.fillText(towerEmoji, this.x, this.y + 5);
+
+        // 업그레이드 레벨 표시
+        if (this.level > 1) {
+            ctx.fillStyle = '#2d3748';
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText('Lv' + this.level, this.x, this.y - 20);
+        }
     }
 }
 
@@ -270,6 +392,8 @@ class Enemy {
     update() {
         if (this.pathIndex >= path.length - 1) {
             gameState.lives--;
+            gameState.lifeFlash = 20;
+            soundManager.lifeLost();
             return false;
         }
         
@@ -294,7 +418,13 @@ class Enemy {
         
         ctx.fillStyle = this.isBoss ? '#9b2c2c' : '#e53e3e';
         ctx.fillRect(this.x - offset, this.y - offset, size, size);
-        
+
+        // 피격 시 흰색 플래시
+        if (this.hitUntil && Date.now() < this.hitUntil) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.fillRect(this.x - offset, this.y - offset, size, size);
+        }
+
         ctx.fillStyle = '#2d3748';
         ctx.font = this.isBoss ? '24px Arial' : '16px Arial';
         ctx.textAlign = 'center';
@@ -314,7 +444,10 @@ class Enemy {
 
     takeDamage(damage) {
         this.health -= damage;
+        this.hitUntil = Date.now() + 100;
         if (this.health <= 0) {
+            spawnParticles(this.x, this.y, this.isBoss ? '#9b2c2c' : '#e53e3e', this.isBoss ? 18 : 10);
+            soundManager.death();
             let goldReward = this.reward;
             let scoreReward = this.reward;
             
@@ -388,8 +521,9 @@ class Projectile {
     }
 
     update() {
-        if (!this.target) return false;
-        
+        // 이미 죽은 적을 다시 맞추면 골드가 중복 지급되는 버그 방지
+        if (!this.target || this.target.health <= 0) return false;
+
         const dx = this.target.x - this.x;
         const dy = this.target.y - this.y;
         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -484,6 +618,11 @@ function initGame() {
     gameState.projectiles = [];
     gameState.waveEnemies = [];
     gameState.waveTimer = 0;
+    gameState.particles = [];
+    gameState.selectedTower = null;
+    gameState.lifeFlash = 0;
+    gameState.isDragging = false;
+    gameState.dragTower = null;
     gameState.gold = 100;
     gameState.lives = 10 + (gameState.shopItems.find(item => item.id === 'life').owned * 3);
     gameState.score = 0;
@@ -507,6 +646,8 @@ function createWave() {
     if (gameState.wave % 3 === 0) {
         gameState.waveEnemies.push(new Enemy(true));
     }
+
+    soundManager.waveStart();
 }
 
 // 게임 업데이트
@@ -517,7 +658,8 @@ function updateGame(currentTime) {
         gameState.waveTimer += 16;
         if (gameState.waveTimer > config.waveDelay) {
             gameState.wave++;
-            
+            saveBest();
+
             // 10웨이브마다 스테이지 클리어
             if (gameState.wave > 10) {
                 stageComplete();
@@ -548,7 +690,23 @@ function updateGame(currentTime) {
             gameState.projectiles.splice(i, 1);
         }
     }
-    
+
+    // 파티클 업데이트
+    for (let i = gameState.particles.length - 1; i >= 0; i--) {
+        const p = gameState.particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.05;
+        p.life--;
+        if (p.life <= 0) {
+            gameState.particles.splice(i, 1);
+        }
+    }
+
+    if (gameState.lifeFlash > 0) {
+        gameState.lifeFlash--;
+    }
+
     if (gameState.lives <= 0) {
         gameOver();
     }
@@ -559,29 +717,34 @@ function updateGame(currentTime) {
 // 스테이지 완료
 function stageComplete() {
     gameState.isRunning = false;
-    
+    saveBest();
+
     // 점수를 코인으로 변환
     const earnedCoins = Math.floor(gameState.score / 10);
     gameState.coins += earnedCoins;
-    
+
     alert(`스테이지 ${gameState.stage} 클리어!\n획득한 코인: ${earnedCoins}개\n총 코인: ${gameState.coins}개`);
-    
+
     gameState.stage++;
     gameState.currentScreen = 'home';
+    updateUI();
     renderHomeScreen();
 }
 
 // 게임 오버
 function gameOver() {
     gameState.isRunning = false;
-    
+    saveBest();
+    soundManager.gameOver();
+
     // 점수를 코인으로 변환
     const earnedCoins = Math.floor(gameState.score / 10);
     gameState.coins += earnedCoins;
-    
+
     alert(`게임 오버!\n최종 점수: ${gameState.score}\n획득한 코인: ${earnedCoins}개\n총 코인: ${gameState.coins}개`);
-    
+
     gameState.currentScreen = 'home';
+    updateUI();
     renderHomeScreen();
 }
 
@@ -631,7 +794,15 @@ function renderGame() {
     for (let projectile of gameState.projectiles) {
         projectile.draw();
     }
-    
+
+    // 파티클 그리기
+    for (let p of gameState.particles) {
+        ctx.globalAlpha = Math.max(p.life / p.maxLife, 0);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x - 2, p.y - 2, 4, 4);
+    }
+    ctx.globalAlpha = 1;
+
     // 게임 정보 표시 (화면 상단)
     ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
     ctx.fillRect(10, 10, 300, 120);
@@ -794,6 +965,29 @@ function renderGame() {
         ctx.arc(gameState.dragStartX, gameState.dragStartY, config.towerRange, 0, Math.PI * 2);
         ctx.stroke();
     }
+
+    // 선택된 타워 표시 및 강화/판매 패널
+    if (gameState.selectedTower && gameState.towers.includes(gameState.selectedTower)) {
+        const t = gameState.selectedTower;
+        ctx.strokeStyle = '#f6ad55';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(t.x - 18, t.y - 18, 36, 36);
+        ctx.strokeStyle = 'rgba(246, 173, 85, 0.6)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, t.range, 0, Math.PI * 2);
+        ctx.stroke();
+
+        drawButton(`⬆ 강화 ${t.upgradeCost()}G`, 20, 150, 130, 30,
+            gameState.gold >= t.upgradeCost() ? '#48bb78' : '#a0aec0');
+        drawButton(`판매 +${t.sellValue()}G`, 160, 150, 90, 30, '#e53e3e');
+    }
+
+    // 생명력 잃을 때 화면 붉은 플래시
+    if (gameState.lifeFlash > 0) {
+        ctx.fillStyle = `rgba(229, 62, 62, ${gameState.lifeFlash / 60})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 }
 
 // 홈 화면 렌더링
@@ -814,6 +1008,13 @@ function renderHomeScreen() {
     ctx.font = '24px Arial';
     ctx.fillText(`스테이지 ${gameState.stage}`, canvas.width/2, 160);
     ctx.fillText(`보유 코인: ${gameState.coins}개`, canvas.width/2, 200);
+
+    // 최고 기록 표시 (localStorage)
+    const best = loadBest();
+    ctx.font = '18px Arial';
+    ctx.fillStyle = '#718096';
+    ctx.fillText(`🏆 최고 점수: ${best.score}  ·  최고 웨이브: ${best.wave}`, canvas.width/2, 240);
+    ctx.fillStyle = '#4a5568';
     
     // 버튼들
     drawButton('전투 시작', canvas.width/2 - 150, 300, 120, 50, '#4299e1');
@@ -916,10 +1117,15 @@ function updateUI() {
     }
 }
 
-// 게임 루프
-function gameLoop(currentTime) {
+// 게임 루프 (가상 시간 사용, 게임 속도 x1/x2 지원)
+function gameLoop() {
     if (gameState.currentScreen === 'game') {
-        updateGame(currentTime);
+        for (let i = 0; i < gameState.gameSpeed; i++) {
+            if (gameState.isRunning && !gameState.isPaused) {
+                gameState.gameTime += 16;
+            }
+            updateGame(gameState.gameTime);
+        }
         renderGame();
     } else if (gameState.currentScreen === 'home') {
         renderHomeScreen();
@@ -929,12 +1135,34 @@ function gameLoop(currentTime) {
     requestAnimationFrame(gameLoop);
 }
 
-// 마우스 이벤트
-canvas.addEventListener('click', (e) => {
+// 캔버스 좌표 계산 (마우스/터치 공통, CSS 축소 대응)
+function getCanvasPos(e) {
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
+    let clientX, clientY;
+    if (e.touches && e.touches.length > 0) {
+        clientX = e.touches[0].clientX;
+        clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+        clientX = e.changedTouches[0].clientX;
+        clientY = e.changedTouches[0].clientY;
+    } else {
+        clientX = e.clientX;
+        clientY = e.clientY;
+    }
+    return {
+        x: (clientX - rect.left) * (canvas.width / rect.width),
+        y: (clientY - rect.top) * (canvas.height / rect.height)
+    };
+}
+
+// 타워 비용 계산 (할인 아이템 반영)
+function getTowerCost() {
+    return gameState.shopItems.find(item => item.id === 'tower_discount').owned > 0 ?
+        config.towerCost * 0.8 : config.towerCost;
+}
+
+// 클릭/탭 공통 처리
+function handleCanvasClick(x, y) {
     if (gameState.currentScreen === 'home') {
         // 전투 시작 버튼
         if (x > canvas.width/2 - 150 && x < canvas.width/2 - 30 && y > 300 && y < 350) {
@@ -990,34 +1218,8 @@ canvas.addEventListener('click', (e) => {
                 } else {
                     alert('코인이 부족합니다!');
                 }
-                }
-});
-
-// 마우스 이동 이벤트 (드래그 중 타워 위치 업데이트)
-canvas.addEventListener('mousemove', (e) => {
-    if (gameState.isDragging && gameState.dragTower) {
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-        
-        gameState.dragStartX = x;
-        gameState.dragStartY = y;
-    }
-});
-
-// 마우스 우클릭 이벤트 (드래그 취소)
-canvas.addEventListener('contextmenu', (e) => {
-    e.preventDefault();
-    if (gameState.isDragging && gameState.dragTower) {
-        const towerCost = gameState.shopItems.find(item => item.id === 'tower_discount').owned > 0 ? 
-            config.towerCost * 0.8 : config.towerCost;
-        gameState.gold += towerCost;
-        gameState.isDragging = false;
-        gameState.dragTower = null;
-        gameState.selectedTowerType = 'basic';
-        updateUI();
-    }
-});
+            }
+        });
     }
     else if (gameState.currentScreen === 'game' && gameState.isRunning && !gameState.isPaused) {
         // 타워 버튼들 클릭 처리
@@ -1167,6 +1369,7 @@ canvas.addEventListener('contextmenu', (e) => {
                     gameState.towers.push(tower);
                     gameState.isDragging = false;
                     gameState.dragTower = null;
+                    soundManager.place();
                     updateUI();
                 } else {
                     // 타워를 놓을 수 없는 위치면 골드 환불
@@ -1179,7 +1382,7 @@ canvas.addEventListener('contextmenu', (e) => {
                 }
             } else {
                 // 경로 위에 놓으려고 하면 골드 환불
-                const towerCost = gameState.shopItems.find(item => item.id === 'tower_discount').owned > 0 ? 
+                const towerCost = gameState.shopItems.find(item => item.id === 'tower_discount').owned > 0 ?
                     config.towerCost * 0.8 : config.towerCost;
                 gameState.gold += towerCost;
                 gameState.isDragging = false;
@@ -1187,8 +1390,99 @@ canvas.addEventListener('contextmenu', (e) => {
                 updateUI();
             }
         }
+        // 배치된 타워 선택 / 강화 / 판매
+        else {
+            if (gameState.selectedTower && gameState.towers.includes(gameState.selectedTower)) {
+                const t = gameState.selectedTower;
+                // 강화 버튼
+                if (x > 20 && x < 150 && y > 150 && y < 180) {
+                    const cost = t.upgradeCost();
+                    if (gameState.gold >= cost) {
+                        gameState.gold -= cost;
+                        t.upgrade();
+                        soundManager.place();
+                        updateUI();
+                    }
+                    return;
+                }
+                // 판매 버튼
+                if (x > 160 && x < 250 && y > 150 && y < 180) {
+                    gameState.gold += t.sellValue();
+                    const idx = gameState.towers.indexOf(t);
+                    if (idx > -1) {
+                        gameState.towers.splice(idx, 1);
+                    }
+                    gameState.selectedTower = null;
+                    soundManager.sell();
+                    updateUI();
+                    return;
+                }
+            }
+            // 타워 클릭 시 선택 (빈 곳 클릭 시 선택 해제)
+            let clickedTower = null;
+            for (let tower of gameState.towers) {
+                if (Math.abs(x - tower.x) <= 18 && Math.abs(y - tower.y) <= 18) {
+                    clickedTower = tower;
+                    break;
+                }
+            }
+            gameState.selectedTower = clickedTower;
+        }
+    }
+}
+
+// 마우스 클릭 이벤트
+canvas.addEventListener('click', (e) => {
+    const pos = getCanvasPos(e);
+    handleCanvasClick(pos.x, pos.y);
+});
+
+// 마우스 이동 이벤트 (드래그 중 타워 위치 업데이트)
+canvas.addEventListener('mousemove', (e) => {
+    if (gameState.isDragging && gameState.dragTower) {
+        const pos = getCanvasPos(e);
+        gameState.dragStartX = pos.x;
+        gameState.dragStartY = pos.y;
     }
 });
+
+// 마우스 우클릭 이벤트 (드래그 취소)
+canvas.addEventListener('contextmenu', (e) => {
+    e.preventDefault();
+    if (gameState.isDragging && gameState.dragTower) {
+        gameState.gold += getTowerCost();
+        gameState.isDragging = false;
+        gameState.dragTower = null;
+        gameState.selectedTowerType = 'basic';
+        updateUI();
+    }
+});
+
+// 터치 이벤트 (모바일 지원)
+canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    soundManager.unlock();
+    if (gameState.isDragging && gameState.dragTower) {
+        const pos = getCanvasPos(e);
+        gameState.dragStartX = pos.x;
+        gameState.dragStartY = pos.y;
+    }
+}, { passive: false });
+
+canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (gameState.isDragging && gameState.dragTower) {
+        const pos = getCanvasPos(e);
+        gameState.dragStartX = pos.x;
+        gameState.dragStartY = pos.y;
+    }
+}, { passive: false });
+
+canvas.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    const pos = getCanvasPos(e);
+    handleCanvasClick(pos.x, pos.y);
+}, { passive: false });
 
 // 선과 점 사이의 거리 계산
 function distanceToLine(px, py, x1, y1, x2, y2) {
@@ -1248,6 +1542,31 @@ document.getElementById('restartBtn').addEventListener('click', () => {
     }
 });
 
+// 소리 켜기/끄기 버튼
+const muteBtn = document.getElementById('muteBtn');
+if (muteBtn) {
+    muteBtn.textContent = soundManager.muted ? '🔇 소리 꺼짐' : '🔊 소리 켬';
+    muteBtn.addEventListener('click', () => {
+        soundManager.muted = !soundManager.muted;
+        try {
+            localStorage.setItem(STORAGE_KEYS.muted, soundManager.muted ? '1' : '0');
+        } catch (err) { /* 무시 */ }
+        muteBtn.textContent = soundManager.muted ? '🔇 소리 꺼짐' : '🔊 소리 켬';
+    });
+}
+
+// 게임 속도 버튼 (x1 / x2)
+const speedBtn = document.getElementById('speedBtn');
+if (speedBtn) {
+    speedBtn.addEventListener('click', () => {
+        gameState.gameSpeed = gameState.gameSpeed === 1 ? 2 : 1;
+        speedBtn.textContent = '⏩ 속도 x' + gameState.gameSpeed;
+    });
+}
+
+// 첫 사용자 입력 시 오디오 컨텍스트 활성화 (브라우저 자동재생 정책 대응)
+document.addEventListener('pointerdown', () => soundManager.unlock(), { once: true });
+
 // 게임 초기화 및 시작
 gameState.currentScreen = 'home';
-gameLoop(0); 
+gameLoop(); 

@@ -34,6 +34,9 @@
             border: 3px solid #4a5568;
             border-radius: 10px;
             background: #f7fafc;
+            max-width: 100%;
+            height: auto; /* 모바일에서 비율 유지 */
+            touch-action: none; /* 터치 조작 시 화면 스크롤 방지 */
         }
         
         .game-info {
@@ -100,6 +103,8 @@
             <button id="startBtn">게임 시작</button>
             <button id="pauseBtn">일시정지</button>
             <button id="restartBtn">다시 시작</button>
+            <button id="speedBtn">⏩ 속도 x1</button>
+            <button id="muteBtn">🔊 소리 켬</button>
         </div>
     </div>
     
@@ -121,9 +126,12 @@
         }
         
         // 게임 상태 변경 시 UI 업데이트
+        // (기존 버그 수정: 원래 updateUI를 호출하지 않아 골드/생명력 표시가 갱신되지 않았고,
+        //  window.gameState가 아닌 전역 gameState를 참조해야 함)
         const originalUpdateUI = window.updateUI;
         window.updateUI = function() {
-            if (window.gameState && window.gameState.currentScreen === 'game') {
+            if (typeof originalUpdateUI === 'function') originalUpdateUI();
+            if (typeof gameState !== 'undefined' && gameState.currentScreen === 'game') {
                 showGameUI();
             } else {
                 hideGameUI();
