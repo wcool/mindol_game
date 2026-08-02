@@ -70,6 +70,7 @@ let gameState = {
     pendingItem: null, // 대기 중인 아이템
     dropInterval: null,
     currentTheme: 'default',
+    upcomingPieces: [], // 미래 예측 아이템용 대기열
     activeItems: {
         ghostBlock: false,
         futureSight: false,
@@ -106,6 +107,15 @@ const earnedPointsEl = document.getElementById('earned-points');
 const gameOverOverlay = document.getElementById('game-over-overlay');
 
 const inventoryItemsEl = document.getElementById('inventory-items');
+
+const pauseBtn = document.getElementById('pause-btn');
+const restartGameBtn = document.getElementById('restart-game-btn');
+const muteBtn = document.getElementById('mute-btn');
+const pauseOverlay = document.getElementById('pause-overlay');
+const resumeBtn = document.getElementById('resume-btn');
+const highScoreEl = document.getElementById('high-score');
+const bestScoreEl = document.getElementById('best-score');
+const newRecordEl = document.getElementById('new-record');
 
 // ==================== 로컬 스토리지 관리 ====================
 function getTotalPoints() {
@@ -171,6 +181,22 @@ function updatePointsDisplay() {
     shopPointsEl.textContent = points.toLocaleString();
 }
 
+// 최고 점수 (기존 저장 키와 겹치지 않는 새 키 사용)
+function getHighScore() {
+    return parseInt(localStorage.getItem('tetris-highscore') || '0');
+}
+
+function setHighScore(score) {
+    localStorage.setItem('tetris-highscore', score.toString());
+    updateHighScoreDisplay();
+}
+
+function updateHighScoreDisplay() {
+    if (highScoreEl) {
+        highScoreEl.textContent = getHighScore().toLocaleString();
+    }
+}
+
 // ==================== 화면 전환 ====================
 function showScreen(screen) {
     [homeScreen, gameScreen, shopScreen].forEach(s => s.classList.remove('active'));
@@ -219,6 +245,26 @@ function drawBoard() {
         ctx.moveTo(0, i * BLOCK_SIZE);
         ctx.lineTo(canvas.width, i * BLOCK_SIZE);
         ctx.stroke();
+    }
+
+    // 줄 제거 플래시 효과
+    const now = performance.now();
+    lineFlashes = lineFlashes.filter(f => now - f.start < FLASH_DURATION);
+    lineFlashes.forEach(f => {
+        const alpha = 1 - (now - f.start) / FLASH_DURATION;
+        ctx.fillStyle = `rgba(255, 255, 255, ${(alpha * 0.8).toFixed(3)})`;
+        ctx.fillRect(0, f.row * BLOCK_SIZE, canvas.width, BLOCK_SIZE);
+    });
+}
+
+// ==================== 줄 제거 플래시 ====================
+const FLASH_DURATION = 300; // ms
+let lineFlashes = [];
+
+function animateFlashes() {
+    if (lineFlashes.length > 0) {
+        drawBoard();
+        requestAnimationFrame(animateFlashes);
     }
 }
 
@@ -280,8 +326,12 @@ function drawNextPiece() {
     nextCtx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
 
     if (gameState.nextPiece) {
+        const showFuture = gameState.activeItems.futureSight && gameState.upcomingPieces.length > 0;
+
+        // 미래 예측 활성화 시 다음 블록을 위쪽에 그림
+        const areaH = showFuture ? nextCanvas.height * 0.55 : nextCanvas.height;
         const offsetX = (nextCanvas.width / BLOCK_SIZE - gameState.nextPiece.shape[0].length) / 2;
-        const offsetY = (nextCanvas.height / BLOCK_SIZE - gameState.nextPiece.shape.length) / 2;
+        const offsetY = (areaH / BLOCK_SIZE - gameState.nextPiece.shape.length) / 2;
 
         gameState.nextPiece.shape.forEach((row, y) => {
             row.forEach((value, x) => {
@@ -290,6 +340,38 @@ function drawNextPiece() {
                 }
             });
         });
+
+        // 미래 예측: 그 다음 2개 블록을 절반 크기로 아래쪽에 표시
+        if (showFuture) {
+            nextCtx.save();
+            nextCtx.scale(0.5, 0.5);
+            gameState.upcomingPieces.slice(0, 2).forEach((piece, i) => {
+                const baseX = i * (nextCanvas.width); // 절반 스케일 기준 좌우 배치
+                const px = baseX / BLOCK_SIZE + ((nextCanvas.width / BLOCK_SIZE) - piece.shape[0].length) / 2;
+                const py = (nextCanvas.height * 1.25) / BLOCK_SIZE;
+                piece.shape.forEach((row, y) => {
+                    row.forEach((value, x) => {
+                        if (value) {
+                            drawBlock(nextCtx, px + x, py + y, piece.color);
+                        }
+                    });
+                });
+            });
+            nextCtx.restore();
+        }
+    }
+}
+
+// 미래 예측 아이템용 블록 대기열
+function pullNextPiece() {
+    return gameState.upcomingPieces.length > 0 ? gameState.upcomingPieces.shift() : createPiece();
+}
+
+function ensureFutureQueue() {
+    if (gameState.activeItems.futureSight) {
+        while (gameState.upcomingPieces.length < 2) {
+            gameState.upcomingPieces.push(createPiece());
+        }
     }
 }
 
@@ -340,6 +422,7 @@ function rotatePiece() {
 function dropPiece() {
     if (!movePiece(0, 1)) {
         mergePiece();
+        playDropSound();
 
         // 블록을 놓을 때마다 50포인트 추가
         gameState.score += 50;
@@ -348,7 +431,8 @@ function dropPiece() {
         clearLines();
 
         gameState.currentPiece = gameState.nextPiece;
-        gameState.nextPiece = createPiece();
+        gameState.nextPiece = pullNextPiece();
+        ensureFutureQueue();
         drawNextPiece();
 
         if (collision(gameState.currentPiece, 0, 0)) {
@@ -359,6 +443,7 @@ function dropPiece() {
 
 function hardDrop() {
     while (movePiece(0, 1)) { }
+    playHardDropSound();
     dropPiece();
 }
 
@@ -455,6 +540,13 @@ function clearLines() {
     }
 
     if (linesToClear.length > 0) {
+        // 줄 제거 플래시 효과 등록
+        const flashStart = performance.now();
+        linesToClear.forEach(row => {
+            lineFlashes.push({ row: row, start: flashStart });
+        });
+        animateFlashes();
+
         // 파티클 생성
         linesToClear.forEach(row => {
             for (let col = 0; col < COLS; col++) {
@@ -505,13 +597,24 @@ function clearLines() {
         // 블록 터지는 효과음 재생 "뽀보보보복"
         playBlockBurstSound(gameState.combo);
 
+        // 테트리스 (4줄 동시 제거) 알림 및 효과음
+        if (linesCleared === 4) {
+            playTetrisSound();
+            showNotification(`🌟 테트리스! +${linePoints.toLocaleString()}점`);
+        }
+
         // 콤보 표시 (콘솔 및 화면에 표시)
         if (gameState.combo > 1) {
             showComboNotification(gameState.combo, linePoints);
         }
 
         // 레벨 업
-        gameState.level = Math.floor(gameState.score / 5000) + 1;
+        const newLevel = Math.floor(gameState.score / 5000) + 1;
+        if (newLevel > gameState.level) {
+            playLevelUpSound();
+            showNotification(`⬆️ 레벨 ${newLevel} 달성!`);
+        }
+        gameState.level = newLevel;
         currentLevelEl.textContent = gameState.level;
         updateGameSpeed();
     } else {
@@ -549,6 +652,7 @@ function startGame() {
     gameState.isPaused = false;
     gameState.currentPiece = createPiece();
     gameState.nextPiece = createPiece();
+    gameState.upcomingPieces = [];
     gameState.activeItems = {
         ghostBlock: false,
         futureSight: false,
@@ -561,6 +665,12 @@ function startGame() {
     currentScoreEl.textContent = '0';
     currentLevelEl.textContent = '1';
     gameOverOverlay.classList.add('hidden');
+    pauseOverlay.classList.add('hidden');
+    pauseBtn.textContent = '⏸ 일시정지';
+    if (newRecordEl) newRecordEl.classList.add('hidden');
+
+    // 파티클/플래시 초기화
+    lineFlashes = [];
 
     // 테마 적용
     const ownedThemes = getOwnedThemes();
@@ -581,17 +691,18 @@ function startGame() {
     // 배경음악 시작 (약간의 지연 후)
     initAudio();
     setTimeout(() => {
-        playBackgroundMusic();
+        if (!isMuted) {
+            playBackgroundMusic();
+        }
     }, 100);
 
     showScreen(gameScreen);
 }
 
 function endGame() {
-    // 세이프티 넷 확인
+    // 세이프티 넷 확인 (아이템은 사용 시점에 이미 인벤토리에서 차감됨)
     if (gameState.activeItems.safetyNet) {
         gameState.activeItems.safetyNet = false;
-        removeItemFromInventory('safety-net');
 
         // 보드 상단 3줄 제거
         for (let i = 0; i < 3; i++) {
@@ -613,9 +724,20 @@ function endGame() {
 
     // 배경음악 정지
     stopBackgroundMusic();
+    playGameOverSound();
 
     const earnedPoints = gameState.score;
     addPoints(earnedPoints);
+
+    // 최고 점수 갱신
+    const prevHigh = getHighScore();
+    if (gameState.score > prevHigh) {
+        setHighScore(gameState.score);
+        if (newRecordEl) newRecordEl.classList.remove('hidden');
+    } else {
+        if (newRecordEl) newRecordEl.classList.add('hidden');
+    }
+    if (bestScoreEl) bestScoreEl.textContent = getHighScore().toLocaleString();
 
     finalScoreEl.textContent = gameState.score.toLocaleString();
     earnedPointsEl.textContent = earnedPoints.toLocaleString();
@@ -626,8 +748,11 @@ function endGame() {
 function showComboNotification(combo, points) {
     // 콘솔에 콤보 정보 출력
     console.log(`🔥 ${combo} COMBO! +${points.toLocaleString()}점`);
+    showNotification(`🔥 ${combo} COMBO! +${points.toLocaleString()}점`);
+}
 
-    // 화면에 콤보 알림 표시 (간단한 구현)
+// 범용 화면 알림 (테트리스, 레벨 업 등)
+function showNotification(text) {
     const notification = document.createElement('div');
     notification.style.cssText = `
         position: fixed;
@@ -645,7 +770,7 @@ function showComboNotification(combo, points) {
         animation: comboPopup 1s ease-out;
         pointer-events: none;
     `;
-    notification.textContent = `🔥 ${combo} COMBO! +${points.toLocaleString()}점`;
+    notification.textContent = text;
     document.body.appendChild(notification);
 
     // 1초 후 제거
@@ -660,6 +785,28 @@ let audioContext = null;
 let bgmGainNode = null;
 let bgmOscillators = [];
 let isMusicPlaying = false;
+
+// 음소거 상태 (로컬 스토리지에 저장)
+let isMuted = localStorage.getItem('tetris-muted') === 'true';
+
+function updateMuteButton() {
+    if (muteBtn) {
+        muteBtn.textContent = isMuted ? '🔇 소리 켜기' : '🔊 음소거';
+    }
+}
+
+function toggleMute() {
+    isMuted = !isMuted;
+    localStorage.setItem('tetris-muted', isMuted.toString());
+    updateMuteButton();
+
+    if (isMuted) {
+        stopBackgroundMusic();
+    } else if (gameScreen.classList.contains('active') && !gameState.gameOver && !gameState.isPaused) {
+        initAudio();
+        playBackgroundMusic();
+    }
+}
 
 // 테트리스 테마 멜로디 (Korobeiniki - 완전한 버전)
 const tetrisMelody = [
@@ -723,7 +870,7 @@ function playBackgroundMusic() {
         return;
     }
 
-    if (isMusicPlaying) return;
+    if (isMusicPlaying || isMuted) return;
 
     // AudioContext 재개 (브라우저 정책)
     if (audioContext.state === 'suspended') {
@@ -785,7 +932,80 @@ function stopBackgroundMusic() {
 }
 
 
+// 단일 톤 재생 헬퍼 (효과음용)
+function playTone(frequency, duration, type = 'square', volume = 0.1, delay = 0) {
+    if (isMuted) return;
+    initAudio();
+    if (!audioContext) return;
+
+    if (audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+
+    const startTime = audioContext.currentTime + delay / 1000;
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.type = type;
+    oscillator.frequency.value = frequency;
+
+    gainNode.gain.setValueAtTime(volume, startTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + duration / 1000);
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.start(startTime);
+    oscillator.stop(startTime + duration / 1000);
+}
+
+// 이동 효과음
+function playMoveSound() {
+    playTone(220, 40, 'triangle', 0.06);
+}
+
+// 회전 효과음
+function playRotateSound() {
+    playTone(340, 60, 'triangle', 0.08);
+}
+
+// 블록 고정(착지) 효과음
+function playDropSound() {
+    playTone(140, 90, 'square', 0.09);
+}
+
+// 하드 드롭 효과음 (빠른 하강 스윕)
+function playHardDropSound() {
+    playTone(500, 50, 'sawtooth', 0.07);
+    playTone(300, 50, 'sawtooth', 0.07, 40);
+    playTone(180, 80, 'square', 0.09, 80);
+}
+
+// 테트리스(4줄) 팡파레
+function playTetrisSound() {
+    playTone(523.25, 120, 'square', 0.12);       // C5
+    playTone(659.25, 120, 'square', 0.12, 110);  // E5
+    playTone(783.99, 120, 'square', 0.12, 220);  // G5
+    playTone(1046.50, 250, 'square', 0.14, 330); // C6
+}
+
+// 레벨 업 효과음 (상승 아르페지오)
+function playLevelUpSound() {
+    playTone(440, 100, 'triangle', 0.1);        // A4
+    playTone(554.37, 100, 'triangle', 0.1, 90); // C#5
+    playTone(659.25, 180, 'triangle', 0.12, 180); // E5
+}
+
+// 게임 오버 효과음 (하강음)
+function playGameOverSound() {
+    playTone(392, 200, 'sawtooth', 0.1);        // G4
+    playTone(311.13, 200, 'sawtooth', 0.1, 180); // Eb4
+    playTone(261.63, 200, 'sawtooth', 0.1, 360); // C4
+    playTone(196, 450, 'sawtooth', 0.12, 540);   // G3
+}
+
 function playSoundEffect(frequency, duration = 100) {
+    if (isMuted) return;
     if (!audioContext) return;
 
     const oscillator = audioContext.createOscillator();
@@ -806,6 +1026,7 @@ function playSoundEffect(frequency, duration = 100) {
 
 // 블록 터지는 효과음 "뽀보보보복"
 function playBlockBurstSound(combo) {
+    if (isMuted) return;
     if (!audioContext) return;
 
     // 뽀보보보복 - 5개의 음을 빠르게 연속 재생
@@ -841,33 +1062,155 @@ function playBlockBurstSound(combo) {
 }
 
 
+// ==================== 일시정지 ====================
+function togglePause() {
+    if (gameState.gameOver || !gameScreen.classList.contains('active')) {
+        return;
+    }
+
+    gameState.isPaused = !gameState.isPaused;
+
+    if (gameState.isPaused) {
+        pauseOverlay.classList.remove('hidden');
+        pauseBtn.textContent = '▶ 계속하기';
+        stopBackgroundMusic();
+    } else {
+        pauseOverlay.classList.add('hidden');
+        pauseBtn.textContent = '⏸ 일시정지';
+        if (!isMuted) {
+            initAudio();
+            playBackgroundMusic();
+        }
+    }
+}
+
 // ==================== 키보드 입력 ====================
 document.addEventListener('keydown', (e) => {
-    if (gameState.gameOver || gameState.isPaused || !gameScreen.classList.contains('active')) {
+    if (gameState.gameOver || !gameScreen.classList.contains('active')) {
+        return;
+    }
+
+    // 일시정지 토글 (일시정지 중에도 동작)
+    if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
+        e.preventDefault();
+        togglePause();
+        return;
+    }
+
+    if (gameState.isPaused) {
         return;
     }
 
     switch (e.key) {
         case 'ArrowLeft':
-            movePiece(-1, 0);
+            e.preventDefault();
+            if (movePiece(-1, 0)) playMoveSound();
             break;
         case 'ArrowRight':
-            movePiece(1, 0);
+            e.preventDefault();
+            if (movePiece(1, 0)) playMoveSound();
             break;
         case 'ArrowDown':
+            e.preventDefault();
             dropPiece();
             break;
         case 'ArrowUp':
         case ' ':
+            e.preventDefault();
             rotatePiece();
+            playRotateSound();
             break;
         case 'Enter':
+            e.preventDefault();
             hardDrop();
             break;
     }
 
     drawBoard();
 });
+
+// ==================== 모바일 터치 입력 ====================
+// 스와이프 좌/우: 이동, 아래: 소프트 드롭, 위: 하드 드롭, 탭: 회전
+(function setupTouchControls() {
+    const MOVE_THRESHOLD = 28;  // 한 칸 이동에 필요한 픽셀
+    const DROP_THRESHOLD = 32;  // 한 칸 소프트 드롭에 필요한 픽셀
+    const TAP_MAX_DIST = 12;
+    const TAP_MAX_TIME = 300;
+    const FLICK_UP_DIST = 50;
+
+    let startX = 0, startY = 0, startTime = 0;
+    let lastX = 0, lastY = 0;
+    let totalDist = 0;
+
+    function touchActive() {
+        return !gameState.gameOver && !gameState.isPaused &&
+            gameScreen.classList.contains('active') && gameState.currentPiece;
+    }
+
+    canvas.addEventListener('touchstart', (e) => {
+        if (!touchActive()) return;
+        e.preventDefault();
+        const t = e.touches[0];
+        startX = lastX = t.clientX;
+        startY = lastY = t.clientY;
+        startTime = Date.now();
+        totalDist = 0;
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+        if (!touchActive()) return;
+        e.preventDefault();
+        const t = e.touches[0];
+        const dx = t.clientX - lastX;
+        const dy = t.clientY - lastY;
+        totalDist += Math.abs(dx) + Math.abs(dy);
+
+        // 좌우 이동
+        if (Math.abs(dx) >= MOVE_THRESHOLD) {
+            const steps = Math.floor(Math.abs(dx) / MOVE_THRESHOLD);
+            const dir = dx > 0 ? 1 : -1;
+            for (let i = 0; i < steps; i++) {
+                if (movePiece(dir, 0)) playMoveSound();
+            }
+            lastX += dir * steps * MOVE_THRESHOLD;
+            drawBoard();
+        }
+
+        // 아래로 스와이프: 소프트 드롭
+        if (dy >= DROP_THRESHOLD) {
+            const steps = Math.floor(dy / DROP_THRESHOLD);
+            for (let i = 0; i < steps; i++) {
+                dropPiece();
+                if (gameState.gameOver) break;
+            }
+            lastY += steps * DROP_THRESHOLD;
+            drawBoard();
+        }
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', (e) => {
+        if (!touchActive()) return;
+        e.preventDefault();
+        const t = e.changedTouches[0];
+        const dx = t.clientX - startX;
+        const dy = t.clientY - startY;
+        const elapsed = Date.now() - startTime;
+
+        // 위로 빠르게 스와이프: 하드 드롭
+        if (dy <= -FLICK_UP_DIST && Math.abs(dy) > Math.abs(dx)) {
+            hardDrop();
+            drawBoard();
+            return;
+        }
+
+        // 짧은 탭: 회전
+        if (totalDist <= TAP_MAX_DIST && elapsed <= TAP_MAX_TIME) {
+            rotatePiece();
+            playRotateSound();
+            drawBoard();
+        }
+    }, { passive: false });
+})();
 
 // ==================== 아이템 시스템 ====================
 const ITEM_INFO = {
@@ -910,6 +1253,8 @@ function useItem(itemId) {
             break;
         case 'future-sight':
             gameState.activeItems.futureSight = true;
+            ensureFutureQueue();
+            drawNextPiece();
             break;
     }
 
@@ -1061,7 +1406,9 @@ function updateInventoryDisplay() {
             const info = ITEM_INFO[itemId];
             const itemEl = document.createElement('div');
             itemEl.className = 'inventory-item';
-            if (gameState.activeItems[itemId.replace(/-/g, '')]) {
+            // 아이템 ID(kebab-case)를 activeItems 키(camelCase)로 변환
+            const activeKey = itemId.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+            if (gameState.activeItems[activeKey]) {
                 itemEl.classList.add('active');
             }
 
@@ -1139,6 +1486,10 @@ backToHomeBtn.addEventListener('click', () => {
 });
 backFromShopBtn.addEventListener('click', () => showScreen(homeScreen));
 restartBtn.addEventListener('click', startGame);
+pauseBtn.addEventListener('click', togglePause);
+resumeBtn.addEventListener('click', togglePause);
+restartGameBtn.addEventListener('click', startGame);
+muteBtn.addEventListener('click', toggleMute);
 homeBtn.addEventListener('click', () => {
     if (gameState.dropInterval) {
         clearInterval(gameState.dropInterval);
@@ -1149,6 +1500,9 @@ homeBtn.addEventListener('click', () => {
 
 // ==================== 초기화 ====================
 updatePointsDisplay();
+updateHighScoreDisplay();
+updateMuteButton();
 initShop();
 console.log('테트리스 게임이 준비되었습니다!');
-console.log('조작법: ← → 이동, ↑/Space 회전, ↓ 빠르게 내리기, Enter 즉시 낙하');
+console.log('조작법: ← → 이동, ↑/Space 회전, ↓ 빠르게 내리기, Enter 즉시 낙하, P/Esc 일시정지');
+console.log('모바일: 좌우 스와이프 이동, 아래 스와이프 내리기, 위로 스와이프 즉시 낙하, 탭 회전');

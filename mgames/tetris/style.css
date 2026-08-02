@@ -152,6 +152,8 @@ body {
     backdrop-filter: blur(10px);
     padding: 15px 20px;
     border-radius: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .game-info {
@@ -193,6 +195,16 @@ body {
     border-radius: 10px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     border: 2px solid rgba(255, 255, 255, 0.2);
+    touch-action: none;
+    /* 모바일 스와이프 조작 시 화면 스크롤 방지 */
+}
+
+/* 게임 컨트롤 버튼 (일시정지/다시 시작/음소거) */
+.game-controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
 /* 사이드 패널 */
@@ -263,6 +275,29 @@ body {
 
 .game-over-content .btn {
     margin: 10px;
+}
+
+/* 일시정지 오버레이 제목 */
+.pause-title {
+    color: #ffd700 !important;
+}
+
+/* 신기록 표시 */
+.new-record {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #ffd700;
+    margin-bottom: 15px;
+    animation: pulse 1s ease-in-out infinite;
+}
+
+.new-record.hidden {
+    display: none;
+}
+
+/* 홈 화면 최고 점수 */
+.high-score-display {
+    margin-left: 10px;
 }
 
 /* 게임 내 인벤토리 */
