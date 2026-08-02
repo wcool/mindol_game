@@ -7,6 +7,206 @@ let coins = 0;
 let poopCount = 0;
 let isGameActive = false;
 let inventory = [];
+let isPaused = false;
+let feedingUntil = 0; // 먹이 애니메이션 중 스프라이트 덮어쓰기 방지
+let miniGameHighScore = 0;
+
+// ===== localStorage 저장 =====
+const STORAGE_KEYS = {
+    coins: 'dama_coins',
+    highScore: 'dama_highScore',
+    muted: 'dama_muted'
+};
+
+function loadPersistentData() {
+    try {
+        coins = parseInt(localStorage.getItem(STORAGE_KEYS.coins), 10) || 0;
+        miniGameHighScore = parseInt(localStorage.getItem(STORAGE_KEYS.highScore), 10) || 0;
+        SoundFX.muted = localStorage.getItem(STORAGE_KEYS.muted) === '1';
+    } catch (e) { /* localStorage 사용 불가 시 무시 */ }
+}
+
+function savePersistentData() {
+    try {
+        localStorage.setItem(STORAGE_KEYS.coins, String(coins));
+        localStorage.setItem(STORAGE_KEYS.highScore, String(miniGameHighScore));
+    } catch (e) { /* 무시 */ }
+}
+
+// ===== 사운드 엔진 (Web Audio API) =====
+const SoundFX = {
+    ctx: null,
+    muted: false,
+    ensureCtx() {
+        if (!this.ctx) {
+            try {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (AC) this.ctx = new AC();
+            } catch (e) { this.ctx = null; }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+            this.ctx.resume().catch(() => {});
+        }
+        return this.ctx;
+    },
+    tone(freq, duration, type, volume, delay) {
+        const ctx = this.ctx;
+        if (!ctx) return;
+        const t0 = ctx.currentTime + (delay || 0);
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type || 'square';
+        osc.frequency.setValueAtTime(freq, t0);
+        gain.gain.setValueAtTime(0.0001, t0);
+        gain.gain.exponentialRampToValueAtTime(volume || 0.15, t0 + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(t0);
+        osc.stop(t0 + duration + 0.05);
+    },
+    play(name) {
+        if (this.muted) return;
+        if (!this.ensureCtx()) return;
+        switch (name) {
+            case 'click':
+                this.tone(600, 0.06, 'square', 0.08);
+                break;
+            case 'feed':
+                this.tone(440, 0.1, 'square', 0.12);
+                this.tone(660, 0.12, 'square', 0.12, 0.1);
+                break;
+            case 'coin':
+                this.tone(880, 0.06, 'square', 0.1);
+                this.tone(1320, 0.1, 'square', 0.1, 0.06);
+                break;
+            case 'clean':
+                this.tone(500, 0.08, 'triangle', 0.12);
+                this.tone(350, 0.1, 'triangle', 0.1, 0.08);
+                break;
+            case 'cure':
+                this.tone(523, 0.1, 'sine', 0.12);
+                this.tone(659, 0.1, 'sine', 0.12, 0.1);
+                this.tone(784, 0.15, 'sine', 0.12, 0.2);
+                break;
+            case 'evolve':
+                this.tone(523, 0.12, 'square', 0.12);
+                this.tone(659, 0.12, 'square', 0.12, 0.12);
+                this.tone(784, 0.12, 'square', 0.12, 0.24);
+                this.tone(1047, 0.3, 'square', 0.12, 0.36);
+                break;
+            case 'death':
+                this.tone(392, 0.25, 'sawtooth', 0.1);
+                this.tone(311, 0.25, 'sawtooth', 0.1, 0.25);
+                this.tone(233, 0.5, 'sawtooth', 0.1, 0.5);
+                break;
+            case 'buy':
+                this.tone(784, 0.08, 'square', 0.12);
+                this.tone(1047, 0.15, 'square', 0.12, 0.08);
+                break;
+            case 'gamestart':
+                this.tone(440, 0.08, 'square', 0.1);
+                this.tone(554, 0.08, 'square', 0.1, 0.08);
+                this.tone(659, 0.12, 'square', 0.1, 0.16);
+                break;
+            case 'gameover':
+                this.tone(659, 0.1, 'triangle', 0.12);
+                this.tone(523, 0.2, 'triangle', 0.12, 0.1);
+                break;
+            case 'record':
+                this.tone(659, 0.1, 'square', 0.12);
+                this.tone(784, 0.1, 'square', 0.12, 0.1);
+                this.tone(1047, 0.1, 'square', 0.12, 0.2);
+                this.tone(1319, 0.25, 'square', 0.12, 0.3);
+                break;
+        }
+    }
+};
+
+function toggleMute() {
+    SoundFX.muted = !SoundFX.muted;
+    try {
+        localStorage.setItem(STORAGE_KEYS.muted, SoundFX.muted ? '1' : '0');
+    } catch (e) { /* 무시 */ }
+    updateMuteButton();
+    if (!SoundFX.muted) SoundFX.play('click');
+}
+
+function updateMuteButton() {
+    const btn = document.getElementById('muteButton');
+    if (btn) {
+        btn.textContent = SoundFX.muted ? '🔇' : '🔊';
+        btn.title = SoundFX.muted ? '소리 켜기' : '소리 끄기';
+    }
+}
+
+// ===== 일시정지 / 다시 시작 =====
+let pauseStartTime = 0;
+
+function togglePause() {
+    if (!isGameActive || !tamagotchi || !tamagotchi.isAlive) return;
+    isPaused = !isPaused;
+    if (isPaused) {
+        pauseStartTime = Date.now();
+    } else {
+        // 일시정지한 시간만큼 병 타이머 보정 (일시정지 중 죽지 않도록)
+        const pausedFor = Date.now() - pauseStartTime;
+        if (tamagotchi && tamagotchi.sickTime) {
+            tamagotchi.sickTime += pausedFor;
+        }
+    }
+    SoundFX.play('click');
+    const overlay = document.getElementById('pauseOverlay');
+    const btn = document.getElementById('pauseButton');
+    if (overlay) overlay.style.display = isPaused ? 'flex' : 'none';
+    if (btn) {
+        btn.textContent = isPaused ? '▶️' : '⏸️';
+        btn.title = isPaused ? '계속하기' : '일시정지';
+    }
+}
+
+function restartGame() {
+    if (confirm('정말 처음부터 다시 시작하시겠습니까?')) {
+        savePersistentData();
+        location.reload();
+    }
+}
+
+// ===== 시각 효과 헬퍼 =====
+function bounceSprite() {
+    const sprite = document.getElementById('tamagotchiSprite');
+    if (!sprite) return;
+    sprite.classList.remove('bounce');
+    // 리플로우 강제로 애니메이션 재시작
+    void sprite.offsetWidth;
+    sprite.classList.add('bounce');
+}
+
+function showFloatText(text) {
+    const container = document.querySelector('.tamagotchi-container');
+    if (!container) return;
+    const el = document.createElement('div');
+    el.className = 'float-text';
+    el.textContent = text;
+    el.style.left = (35 + Math.random() * 30) + '%';
+    container.appendChild(el);
+    setTimeout(() => el.remove(), 1200);
+}
+
+function showToast(message) {
+    const old = document.getElementById('gameToast');
+    if (old) old.remove();
+    const toast = document.createElement('div');
+    toast.id = 'gameToast';
+    toast.className = 'game-toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    setTimeout(() => toast.classList.add('show'), 10);
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+    }, 2200);
+}
 
 
 // Mini-game state
@@ -111,7 +311,9 @@ class Tamagotchi {
             this.weight += food.weight;
 
             // Animate feeding
+            SoundFX.play('feed');
             animateFeeding(foodType);
+            showFloatText(`+${food.fullness} 🍚`);
             updateDisplay();
         }
     }
@@ -127,6 +329,8 @@ class Tamagotchi {
             poopCount = 0;
             document.getElementById('poopContainer').innerHTML = '';
             this.happiness = Math.min(100, this.happiness + 5);
+            SoundFX.play('clean');
+            showFloatText('+5 ✨');
             updateDisplay();
         }
     }
@@ -137,12 +341,15 @@ class Tamagotchi {
             this.sickTime = null;
             document.getElementById('sickIndicator').style.display = 'none';
             this.happiness = Math.min(100, this.happiness + 10);
+            SoundFX.play('cure');
+            showFloatText('+10 💊');
+            bounceSprite();
             updateDisplay();
         }
     }
 
     update() {
-        if (!this.isAlive) return;
+        if (!this.isAlive || isPaused) return;
 
         // Decrease stats over time
         this.fullness = Math.max(0, this.fullness - 0.5);
@@ -171,6 +378,15 @@ class Tamagotchi {
     die(reason) {
         this.isAlive = false;
         clearAllTimers();
+        // 미니게임 진행 중이면 종료
+        if (miniGame.active) {
+            miniGame.active = false;
+            clearInterval(miniGame.spawnInterval);
+        }
+        // 잠자는 상태로 죽은 경우 화면 밝기 복구
+        document.querySelector('.game-screen').classList.remove('sleeping');
+        savePersistentData();
+        SoundFX.play('death');
         showDeathScreen(reason);
     }
 
@@ -245,6 +461,8 @@ function startGame() {
     document.getElementById('gameContainer').style.display = 'block';
 
     isGameActive = true;
+    SoundFX.play('gamestart');
+    updateMuteButton();
     updateDisplay();
     startTimers();
 }
@@ -273,6 +491,7 @@ function updateDisplay() {
 
 function updateSprite() {
     if (!tamagotchi || tamagotchi.isSleeping) return;
+    if (Date.now() < feedingUntil) return; // 먹이 애니메이션 중에는 덮어쓰지 않음
 
     const stage = evolutionStages[tamagotchi.evolutionStage];
     const spriteElement = document.getElementById('tamagotchiSprite');
@@ -291,7 +510,7 @@ function updateSprite() {
 function startTimers() {
     // Age timer (every minute)
     gameTimers.age = setInterval(() => {
-        if (!tamagotchi || !tamagotchi.isAlive) return;
+        if (!tamagotchi || !tamagotchi.isAlive || isPaused) return;
         tamagotchi.age++;
         updateDisplay();
     }, 60000); // 1 minute
@@ -306,7 +525,7 @@ function startTimers() {
     function schedulePoop() {
         const delay = (Math.random() * 3 + 2) * 60000; // 2-5 minutes
         gameTimers.poop = setTimeout(() => {
-            if (tamagotchi && tamagotchi.isAlive && !tamagotchi.isSleeping && tamagotchi.fullness > 30) {
+            if (tamagotchi && tamagotchi.isAlive && !isPaused && !tamagotchi.isSleeping && tamagotchi.fullness > 30) {
                 addPoop();
             }
             schedulePoop();
@@ -318,7 +537,7 @@ function startTimers() {
     function scheduleSickness() {
         const delay = (Math.random() * 10 + 5) * 60000; // 5-15 minutes
         gameTimers.sickness = setTimeout(() => {
-            if (tamagotchi && tamagotchi.isAlive && !tamagotchi.isSick && !tamagotchi.isSleeping) {
+            if (tamagotchi && tamagotchi.isAlive && !isPaused && !tamagotchi.isSick && !tamagotchi.isSleeping) {
                 tamagotchi.isSick = true;
                 tamagotchi.sickTime = Date.now();
                 document.getElementById('sickIndicator').style.display = 'block';
@@ -339,24 +558,28 @@ function startTimers() {
 
         // Schedule sleep at 4 minutes
         gameTimers.evolutionSleep = setTimeout(() => {
-            if (tamagotchi && tamagotchi.isAlive) {
+            if (tamagotchi && tamagotchi.isAlive && !isPaused) {
                 tamagotchi.sleep();
             }
         }, evolutionInterval - 60000); // 4 minutes
 
         // Schedule wake up at 4:50
         gameTimers.evolutionWake = setTimeout(() => {
-            if (tamagotchi && tamagotchi.isAlive) {
+            if (tamagotchi && tamagotchi.isAlive && tamagotchi.isSleeping) {
                 tamagotchi.wakeUp();
             }
         }, evolutionInterval - 10000); // 4 minutes 50 seconds
 
         // Schedule evolution at 5:00
-        gameTimers.evolutionEvolve = setTimeout(() => {
-            if (tamagotchi && tamagotchi.isAlive) {
-                tamagotchi.evolve();
-                scheduleEvolution(); // Schedule next evolution
+        gameTimers.evolutionEvolve = setTimeout(function fireEvolution() {
+            if (!tamagotchi || !tamagotchi.isAlive) return;
+            if (isPaused) {
+                // 일시정지 중이면 잠시 후 다시 시도
+                gameTimers.evolutionEvolve = setTimeout(fireEvolution, 1000);
+                return;
             }
+            tamagotchi.evolve();
+            scheduleEvolution(); // Schedule next evolution
         }, evolutionInterval); // 5 minutes
     }
     scheduleEvolution();
@@ -426,11 +649,13 @@ function animateFeeding(foodType) {
     };
 
     const sprite = document.getElementById('tamagotchiSprite');
-    const originalContent = sprite.textContent;
+    feedingUntil = Date.now() + 500;
     sprite.textContent = foodEmojis[foodType];
+    bounceSprite();
 
     setTimeout(() => {
-        sprite.textContent = originalContent;
+        feedingUntil = 0;
+        updateSprite(); // 이미지/이모지 단계 모두 올바르게 복원
     }, 500);
 }
 
@@ -471,22 +696,24 @@ function startMiniGame() {
     miniGame.ctx = miniGame.canvas.getContext('2d');
     miniGame.coins = [];
     miniGame.score = 0;
+    miniGame.popups = []; // 떠오르는 점수 표시
+    miniGame.endTime = Date.now() + 30000; // 30초 후 종료
+    miniGame.lastFrame = Date.now();
 
     // Reset player position
     miniGame.player.x = 135;
+
+    SoundFX.play('gamestart');
 
     // Start game loop
     requestAnimationFrame(updateMiniGame);
 
     // Spawn coins
     miniGame.spawnInterval = setInterval(spawnCoin, 1000);
-
-    // End game after 30 seconds
-    setTimeout(endMiniGame, 30000);
 }
 
 function spawnCoin() {
-    if (!miniGame.active) return;
+    if (!miniGame.active || isPaused) return;
 
     miniGame.coins.push({
         x: Math.random() * (miniGame.canvas.width - 20),
@@ -499,6 +726,23 @@ function spawnCoin() {
 
 function updateMiniGame() {
     if (!miniGame.active) return;
+
+    const now = Date.now();
+
+    // 일시정지 중이면 종료 시간을 뒤로 밀고 그리기만 유지
+    if (isPaused) {
+        miniGame.endTime += now - miniGame.lastFrame;
+        miniGame.lastFrame = now;
+        requestAnimationFrame(updateMiniGame);
+        return;
+    }
+    miniGame.lastFrame = now;
+
+    // 시간 종료 체크
+    if (now >= miniGame.endTime) {
+        endMiniGame();
+        return;
+    }
 
     const ctx = miniGame.ctx;
     const canvas = miniGame.canvas;
@@ -525,6 +769,10 @@ function updateMiniGame() {
             miniGame.coins.splice(i, 1);
             miniGame.score++;
             coins++;
+            savePersistentData();
+            SoundFX.play('coin');
+            // 떠오르는 +1 표시
+            miniGame.popups.push({ x: coin.x, y: coin.y, alpha: 1 });
             updateDisplay();
         }
 
@@ -534,17 +782,49 @@ function updateMiniGame() {
         }
     }
 
+    // 떠오르는 점수 표시 업데이트
+    for (let i = miniGame.popups.length - 1; i >= 0; i--) {
+        const p = miniGame.popups[i];
+        p.y -= 1.5;
+        p.alpha -= 0.03;
+        if (p.alpha <= 0) {
+            miniGame.popups.splice(i, 1);
+            continue;
+        }
+        ctx.fillStyle = `rgba(255, 200, 0, ${p.alpha})`;
+        ctx.font = 'bold 18px Arial';
+        ctx.fillText('+1', p.x, p.y);
+    }
+
     // Draw score
     ctx.fillStyle = '#333';
     ctx.font = 'bold 20px Arial';
     ctx.fillText('코인: ' + miniGame.score, 10, 30);
 
+    // 남은 시간 표시
+    const remainSec = Math.max(0, Math.ceil((miniGame.endTime - now) / 1000));
+    ctx.fillText('⏱️ ' + remainSec + '초', canvas.width - 90, 30);
+
+    // 최고 기록 표시
+    ctx.fillStyle = '#666';
+    ctx.font = 'bold 14px Arial';
+    ctx.fillText('최고: ' + miniGameHighScore, 10, 52);
+
     requestAnimationFrame(updateMiniGame);
 }
 
 function endMiniGame() {
+    if (!miniGame.active) return; // 중복 실행 방지
     miniGame.active = false;
     clearInterval(miniGame.spawnInterval);
+
+    // 최고 기록 갱신 확인
+    let newRecord = false;
+    if (miniGame.score > miniGameHighScore) {
+        miniGameHighScore = miniGame.score;
+        newRecord = true;
+    }
+    savePersistentData();
 
     if (tamagotchi) {
         tamagotchi.happiness = Math.min(100, tamagotchi.happiness + miniGame.score * 2);
@@ -553,6 +833,15 @@ function endMiniGame() {
 
     document.getElementById('gameScreen').style.display = 'none';
     document.getElementById('mainScreen').style.display = 'block';
+
+    if (newRecord && miniGame.score > 0) {
+        SoundFX.play('record');
+        showToast(`🎉 신기록! 코인 ${miniGame.score}개 획득!`);
+    } else {
+        SoundFX.play('gameover');
+        showToast(`미니게임 종료! 코인 ${miniGame.score}개 획득 (최고: ${miniGameHighScore})`);
+    }
+    bounceSprite();
 }
 
 // Keyboard controls for mini-game
@@ -560,8 +849,10 @@ document.addEventListener('keydown', (e) => {
     if (!miniGame.active) return;
 
     if (e.key === 'ArrowLeft') {
+        e.preventDefault(); // 화면 스크롤 방지
         miniGame.player.x = Math.max(0, miniGame.player.x - 15);
     } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
         miniGame.player.x = Math.min(miniGame.canvas.width - 30, miniGame.player.x + 15);
     }
 });
@@ -574,6 +865,7 @@ function showEvolutionScreen() {
     // Show black screen
     evolutionScreen.style.display = 'flex';
     evolutionAnimation.textContent = '✨';
+    SoundFX.play('evolve');
 
     setTimeout(() => {
         // Show new form
@@ -819,18 +1111,21 @@ function buyItem(itemId) {
 
     if (coins >= item.price) {
         coins -= item.price;
+        savePersistentData();
         updateDisplay();
 
         // Apply item effect
         item.effect();
 
         // Show purchase confirmation
-        alert(`${item.name}을(를) 구매했습니다!`);
+        SoundFX.play('buy');
+        showToast(`${item.name}을(를) 구매했습니다!`);
 
         // Refresh shop display
         openShop();
     } else {
-        alert('코인이 부족합니다!');
+        SoundFX.play('click');
+        showToast('코인이 부족합니다!');
     }
 }
 
@@ -843,3 +1138,21 @@ document.getElementById('nameInput').addEventListener('keypress', (e) => {
         startGame();
     }
 });
+
+// Header buttons (mute / pause / restart)
+const muteButtonEl = document.getElementById('muteButton');
+if (muteButtonEl) muteButtonEl.addEventListener('click', toggleMute);
+
+const pauseButtonEl = document.getElementById('pauseButton');
+if (pauseButtonEl) pauseButtonEl.addEventListener('click', togglePause);
+
+const restartButtonEl = document.getElementById('restartButton');
+if (restartButtonEl) restartButtonEl.addEventListener('click', restartGame);
+
+// 일시정지 오버레이 클릭 시 재개
+const pauseOverlayEl = document.getElementById('pauseOverlay');
+if (pauseOverlayEl) pauseOverlayEl.addEventListener('click', togglePause);
+
+// 저장된 데이터 불러오기 (코인, 최고 기록, 음소거 설정)
+loadPersistentData();
+updateMuteButton();

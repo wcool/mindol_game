@@ -842,6 +842,127 @@ body {
     }
 }
 
+/* 헤더 버튼 (음소거 / 일시정지 / 다시 시작) */
+.header-buttons {
+    display: flex;
+    gap: 5px;
+}
+
+.header-btn {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    padding: 6px 8px;
+    border-radius: 10px;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1;
+}
+
+.header-btn:hover {
+    background: rgba(255, 255, 255, 0.4);
+    transform: scale(1.1);
+}
+
+.header-btn:active {
+    transform: scale(0.95);
+}
+
+/* 일시정지 오버레이 */
+.pause-content {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    cursor: pointer;
+}
+
+.pause-content h1 {
+    color: white;
+    font-size: 2.5em;
+}
+
+.pause-content p {
+    color: #bdc3c7;
+    font-size: 1em;
+    margin-bottom: 0;
+}
+
+/* 스프라이트 바운스 (피드백 효과) */
+.bounce {
+    animation: spriteBounce 0.5s ease !important;
+}
+
+@keyframes spriteBounce {
+    0% {
+        transform: scale(1);
+    }
+
+    30% {
+        transform: scale(1.25) rotate(-5deg);
+    }
+
+    60% {
+        transform: scale(0.9) rotate(5deg);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* 떠오르는 텍스트 효과 */
+.float-text {
+    position: absolute;
+    top: 30%;
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #f5576c;
+    text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.8);
+    pointer-events: none;
+    animation: floatUp 1.2s ease-out forwards;
+    z-index: 10;
+}
+
+@keyframes floatUp {
+    0% {
+        opacity: 0;
+        transform: translateY(0);
+    }
+
+    15% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateY(-60px);
+    }
+}
+
+/* 토스트 메시지 */
+.game-toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(44, 62, 80, 0.95);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 25px;
+    font-weight: bold;
+    font-size: 0.95em;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+    opacity: 0;
+    transition: all 0.4s ease;
+    z-index: 2000;
+    pointer-events: none;
+    max-width: 90%;
+    text-align: center;
+}
+
+.game-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
 /* 터치 디바이스 최적화 */
 @media (hover: none) and (pointer: coarse) {
 

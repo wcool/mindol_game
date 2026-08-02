@@ -35,6 +35,11 @@
                 <button onclick="window.location.href='../../index.html'"
                     style="background: rgba(255,255,255,0.2); border: none; padding: 8px 16px; border-radius: 10px; color: white; cursor: pointer; font-weight: bold;">🏠
                     홈</button>
+                <div class="header-buttons">
+                    <button id="muteButton" class="header-btn" title="소리 끄기">🔊</button>
+                    <button id="pauseButton" class="header-btn" title="일시정지">⏸️</button>
+                    <button id="restartButton" class="header-btn" title="다시 시작">🔄</button>
+                </div>
                 <div class="light-indicator">
                     <span id="lightIcon">💡</span>
                 </div>
@@ -79,7 +84,7 @@
                 <div id="gameScreen" class="screen-content" style="display: none;">
                     <canvas id="gameCanvas" width="300" height="400"></canvas>
                     <div class="game-instructions">
-                        ← → 키로 이동하여 코인을 모으세요!
+                        ← → 키 또는 화면 터치로 이동하여 코인을 모으세요!
                     </div>
                     <div class="mobile-game-controls"
                         style="display: flex; justify-content: center; gap: 20px; margin-top: 15px;">
@@ -207,6 +212,14 @@
         </div>
     </div>
 
+    <!-- Pause Overlay -->
+    <div id="pauseOverlay" class="modal" style="display: none;">
+        <div class="modal-content pause-content">
+            <h1>⏸️ 일시정지</h1>
+            <p>화면을 터치하면 게임이 계속됩니다</p>
+        </div>
+    </div>
+
     <script src="../../likes-widget.js"></script>
     <script src="game.js"></script>
     <script src="touch-controls.js"></script>
@@ -214,6 +227,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof LikesWidget !== 'undefined') LikesWidget.init('dama');
         });
-    </script>`n</body>
+    </script>
+</body>
 
 </html>
