@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>몬스터 헌터 RPG</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- 지역 선택 -->
+    <nav id="region-bar"></nav>
+
+    <!-- 플레이어 상태 -->
+    <section id="player-panel">
+      <div id="player-top">
+        <span id="player-avatar">🧑‍🚀</span>
+        <div id="player-info">
+          <div id="player-name-row">
+            <b id="player-level">Lv.1</b>
+            <span id="menu-btns">
+              <button id="codex-btn" title="몬스터 도감">📖</button>
+              <button id="ach-btn" title="업적">🏅</button>
+            </span>
+            <span id="player-gold">🪙 0</span>
+          </div>
+          <div class="bar hp-bar"><div id="player-hp-fill"></div><span id="player-hp-text"></span></div>
+          <div class="bar mp-bar"><div id="player-mp-fill"></div><span id="player-mp-text"></span></div>
+          <div class="bar exp-bar"><div id="player-exp-fill"></div><span id="player-exp-text"></span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 전투 영역 -->
+    <main id="battle-area">
+      <div id="region-title"></div>
+      <div id="kill-progress"></div>
+
+      <div id="monster-box">
+        <div id="monster-emoji">🟢</div>
+        <div id="monster-name">슬라임</div>
+        <div class="bar monster-hp"><div id="monster-hp-fill"></div><span id="monster-hp-text"></span></div>
+      </div>
+
+      <button id="boss-btn" class="hidden">👑 보스 도전!</button>
+      <button id="auto-btn">⚔️ 자동 OFF</button>
+      <div id="pet-sprite" class="hidden"></div>
+      <div id="fx-layer"></div>
+    </main>
+
+    <!-- 스킬 / 아이템 -->
+    <section id="action-bar">
+      <button class="skill-btn" id="skill-0"></button>
+      <button class="skill-btn" id="skill-1"></button>
+      <button class="skill-btn" id="skill-2"></button>
+      <button class="skill-btn" id="skill-3"></button>
+      <button class="potion-btn" id="hp-potion-btn"></button>
+      <button class="potion-btn" id="mp-potion-btn"></button>
+      <button id="shop-btn">🛒<span>상점</span></button>
+    </section>
+  </div>
+
+  <!-- 상점 모달 -->
+  <div id="shop-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2>🛒 상점</h2>
+        <span id="shop-gold">🪙 0</span>
+        <button id="shop-close">✕</button>
+      </div>
+      <div class="shop-tabs">
+        <button class="shop-tab active" data-tab="weapon">⚔️ 무기</button>
+        <button class="shop-tab" data-tab="armor">🛡️ 방어구</button>
+        <button class="shop-tab" data-tab="potion">🧪 포션</button>
+        <button class="shop-tab" data-tab="pet">🥚 펫</button>
+      </div>
+      <div id="shop-list"></div>
+    </div>
+  </div>
+
+  <!-- 캡슐 뽑기 연출 -->
+  <div id="gacha-overlay" class="modal hidden">
+    <div id="gacha-stage">
+      <div id="gacha-capsule">🥚</div>
+      <div id="gacha-result" class="hidden">
+        <div id="gacha-rarity"></div>
+        <div id="gacha-pet-emoji"></div>
+        <div id="gacha-pet-name"></div>
+        <div id="gacha-pet-desc"></div>
+        <button id="gacha-close">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 시작 화면 -->
+  <div id="start-overlay">
+    <div class="overlay-card">
+      <h1>⚔️ 몬스터 헌터 RPG</h1>
+      <p>16개의 지역, 80종의 몬스터!<br>몬스터를 탭해서 공격하고, 장비와 펫을 모아<br>천상계의 혼돈의 신까지 무찌르세요.</p>
+      <p class="hint">👆 몬스터 연타 = 공격 · 스킬은 레벨업으로 해금<br>🥚 상점 펫 탭에서 캡슐 뽑기!</p>
+      <button id="start-btn">모험 시작</button>
+    </div>
+  </div>
+
+  <!-- 승리 화면 -->
+  <div id="win-overlay" class="modal hidden">
+    <div class="overlay-card">
+      <h1>🏆 혼돈의 신 토벌 완료!</h1>
+      <p>16개 지역의 모든 보스를 물리쳤습니다.<br>당신은 전설의 헌터입니다!</p>
+      <button id="win-close">계속 사냥하기</button>
+    </div>
+  </div>
+
+  <!-- 몬스터 도감 -->
+  <div id="codex-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2>📖 몬스터 도감</h2>
+        <span id="codex-count"></span>
+        <button id="codex-close">✕</button>
+      </div>
+      <div id="codex-list"></div>
+    </div>
+  </div>
+
+  <!-- 업적 -->
+  <div id="ach-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2>🏅 업적</h2>
+        <span id="ach-count"></span>
+        <button id="ach-close">✕</button>
+      </div>
+      <div id="ach-list"></div>
+    </div>
+  </div>
+
+  <!-- 개발자 치트 메뉴 (아바타 5연타로 열림) -->
+  <div id="cheat-modal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2>🛠️ 개발자 메뉴</h2>
+        <button id="cheat-close">✕</button>
+      </div>
+      <div id="cheat-grid">
+        <button class="cheat-btn" data-cheat="gold10k">🪙<span>골드 +10K</span></button>
+        <button class="cheat-btn" data-cheat="gold100k">💰<span>골드 +100K</span></button>
+        <button class="cheat-btn" data-cheat="gold10m">🏦<span>골드 +10M</span></button>
+        <button class="cheat-btn" data-cheat="lv1">⬆️<span>레벨 +1</span></button>
+        <button class="cheat-btn" data-cheat="lv10">🚀<span>레벨 +10</span></button>
+        <button class="cheat-btn" data-cheat="heal">💖<span>풀 회복</span></button>
+        <button class="cheat-btn" data-cheat="potion">🧪<span>포션 +10</span></button>
+        <button class="cheat-btn" data-cheat="pet">🥚<span>랜덤 펫</span></button>
+        <button class="cheat-btn" data-cheat="unlock">🗺️<span>전 지역 해금</span></button>
+        <button class="cheat-btn danger" data-cheat="reset">🗑️<span>저장 초기화</span></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="hidden"></div>
+
+  <script src="audio.js"></script>
+  <script src="data.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
