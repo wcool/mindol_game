@@ -57,6 +57,29 @@
       border-radius: 14px;
       box-shadow: 0 0 40px rgba(224, 123, 57, 0.12);
       max-width: 98vw;
+      touch-action: none;
+    }
+
+    /* control buttons */
+    #controls {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+    }
+
+    .ctl-btn {
+      background: #fff3e0;
+      color: #e07b39;
+      border: 1px solid rgba(224, 123, 57, .45);
+      border-radius: 8px;
+      padding: 6px 14px;
+      cursor: pointer;
+      font-family: 'Fira Code', monospace;
+      font-size: .85rem;
+    }
+
+    .ctl-btn:hover {
+      background: #ffe0b2;
     }
 
     /* mobile */
@@ -95,6 +118,12 @@
 
   <canvas id="c" width="800" height="380"></canvas>
 
+  <div id="controls">
+    <button id="btn-pause" class="ctl-btn">⏸ 일시정지</button>
+    <button id="btn-restart" class="ctl-btn">↻ 다시하기</button>
+    <button id="btn-mute" class="ctl-btn">🔊 소리켬</button>
+  </div>
+
   <div id="mobile-hint">
     <span class="key">↑</span> 점프 &nbsp;|&nbsp; <span class="key">↓</span> 구부리기 <br>
     📱 <span style="color:#ffb432">모바일</span>: 좌측화면 누르기 = <strong>구부리기</strong> &nbsp;|&nbsp; 우측화면 터치 = <strong>점프</strong>
@@ -126,12 +155,53 @@
     const JUMP_V = -11.8;   // 점프 초기 속도 (기존보다 낮춤)
     const CHAR_X = 110;   // fixed character screen X
 
+    // ── SOUND (Web Audio API, 외부 파일 없음) ─────────────────────────────
+    let audioCtx = null;
+    let muted = localStorage.getItem('zump_sun_muted') === '1';
+
+    function ensureAudio() {
+      if (!audioCtx) {
+        try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+        catch (e) { audioCtx = null; }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playTone(freq, dur, type, vol, endFreq) {
+      if (muted || !audioCtx) return;
+      const t0 = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      osc.type = type || 'square';
+      osc.frequency.setValueAtTime(freq, t0);
+      if (endFreq) osc.frequency.exponentialRampToValueAtTime(endFreq, t0 + dur);
+      g.gain.setValueAtTime(vol || 0.12, t0);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(g); g.connect(audioCtx.destination);
+      osc.start(t0); osc.stop(t0 + dur + 0.02);
+    }
+
+    function sfxJump() { playTone(320, 0.18, 'square', 0.10, 660); }        // 점프: 위로 슉
+    function sfxLand() { playTone(150, 0.09, 'triangle', 0.14, 90); }       // 착지: 통통
+    function sfxScore() {                                                    // 점수: 띠링
+      playTone(660, 0.08, 'square', 0.10);
+      setTimeout(() => playTone(880, 0.12, 'square', 0.10), 70);
+    }
+    function sfxHit() {                                                      // 충돌: 삐용
+      playTone(220, 0.3, 'sawtooth', 0.14, 55);
+      setTimeout(() => playTone(160, 0.4, 'sawtooth', 0.12, 40), 120);
+    }
+
     // ── state ─────────────────────────────────────────────────────────────
-    let state = 'start'; // 'start' | 'play' | 'dead'
-    let score = 0, hiScore = 0;
+    const HI_KEY = 'zump_sun_hiScore';
+    let state = 'start'; // 'start' | 'play' | 'pause' | 'dead'
+    let score = 0;
+    let hiScore = parseInt(localStorage.getItem(HI_KEY) || '0', 10) || 0;
+    document.getElementById('hi-val').textContent = hiScore;
     let speed = 5;       // obstacle scroll speed
     let dist = 0;       // total distance (for speed ramp-up)
     let frame = 0;
+    let lastMilestone = 0; // 100점 단위 효과음 중복 방지
 
     // character
     // Standing hitbox: top = y-108, height = 103
@@ -161,12 +231,22 @@
     });
     let groundDots = [];
     for (let i = 0; i < 30; i++) groundDots.push({ x: i * (W / 15), speed: 1 });
+    // 낮 하늘 뭉게구름 (parallax clouds)
+    let bgClouds = [];
+    for (let i = 0; i < 5; i++) bgClouds.push({
+      x: Math.random() * W * 1.4, y: 25 + Math.random() * 130,
+      s: 0.6 + Math.random() * 0.8,
+      speed: 0.25 + Math.random() * 0.35,
+    });
 
     // ── INPUT ─────────────────────────────────────────────────────────────
     const keys = {};
     document.addEventListener('keydown', e => {
+      ensureAudio();
       keys[e.key] = true;
       if (['ArrowUp', 'ArrowDown', ' '].includes(e.key)) e.preventDefault();
+      if ((e.key === 'p' || e.key === 'P' || e.key === 'Escape') &&
+        (state === 'play' || state === 'pause')) { togglePause(); return; }
       if (e.key === 'ArrowUp' || e.key === ' ') handleJump();
       if (state === 'dead' && (e.key === 'ArrowUp' || e.key === ' ' || e.key === 'Enter')) restart();
       if (state === 'start' && (e.key === 'ArrowUp' || e.key === ' ' || e.key === 'Enter')) startGame();
@@ -176,12 +256,14 @@
     // ── TOUCH REWORK ──────────────────────────────────────────────────────
     canvas.addEventListener('pointerdown', (e) => {
       e.preventDefault();
+      ensureAudio();
       if (state === 'start') { startGame(); return; }
       if (state === 'dead') { restart(); return; }
+      if (state === 'pause') { togglePause(); return; }
 
       const rect = canvas.getBoundingClientRect();
       const touchX = e.clientX - rect.left;
-      
+
       if (touchX < rect.width / 2) {
         keys['ArrowDown'] = true; // 좌측 터치: 구부리기
       } else {
@@ -189,10 +271,11 @@
       }
     });
 
-    canvas.addEventListener('pointerup', () => {
+    // window 레벨에서 해제: 손가락이 캔버스 밖에서 떨어져도 구부리기가 풀리도록
+    window.addEventListener('pointerup', () => {
       keys['ArrowDown'] = false;
     });
-    canvas.addEventListener('pointercancel', () => {
+    window.addEventListener('pointercancel', () => {
       keys['ArrowDown'] = false;
     });
 
@@ -200,8 +283,43 @@
       if (state === 'play' && char.onGround && !char.duck) {
         char.vy = JUMP_V; char.onGround = false;
         for (let i = 0; i < 5; i++) particles.push(dustParticle());
+        sfxJump();
       }
     }
+
+    // ── PAUSE / BUTTONS ───────────────────────────────────────────────────
+    const btnPause = document.getElementById('btn-pause');
+    const btnRestart = document.getElementById('btn-restart');
+    const btnMute = document.getElementById('btn-mute');
+
+    function updatePauseBtn() {
+      btnPause.textContent = state === 'pause' ? '▶ 계속하기' : '⏸ 일시정지';
+    }
+    function updateMuteBtn() {
+      btnMute.textContent = muted ? '🔇 음소거' : '🔊 소리켬';
+    }
+    updateMuteBtn();
+
+    function togglePause() {
+      if (state === 'play') state = 'pause';
+      else if (state === 'pause') state = 'play';
+      updatePauseBtn();
+    }
+
+    btnPause.addEventListener('click', () => {
+      ensureAudio(); togglePause(); btnPause.blur();
+    });
+    btnRestart.addEventListener('click', () => {
+      ensureAudio();
+      if (state === 'start') startGame(); else restart();
+      updatePauseBtn(); btnRestart.blur();
+    });
+    btnMute.addEventListener('click', () => {
+      muted = !muted;
+      localStorage.setItem('zump_sun_muted', muted ? '1' : '0');
+      if (!muted) ensureAudio();
+      updateMuteBtn(); btnMute.blur();
+    });
 
     // ── PARTICLES ─────────────────────────────────────────────────────────
     let particles = [];
@@ -236,24 +354,32 @@
     function startGame() {
       if (state !== 'start') return;
       state = 'play'; frame = 0; score = 0; dist = 0; speed = 5;
-      obstacles = []; nextObsDist = 120;
+      obstacles = []; nextObsDist = 120; lastMilestone = 0;
       char.y = GROUND_Y; char.vy = 0; char.onGround = true;
       document.getElementById('score-val').textContent = '0';
+      updatePauseBtn();
     }
 
     function restart() {
       state = 'play'; frame = 0; score = 0; dist = 0; speed = 5;
-      obstacles = []; nextObsDist = 120; particles = [];
+      obstacles = []; nextObsDist = 120; particles = []; lastMilestone = 0;
       char.y = GROUND_Y; char.vy = 0; char.onGround = true;
       char.duck = false; char.deathTimer = 0;
       document.getElementById('score-val').textContent = '0';
+      updatePauseBtn();
     }
 
     function die() {
       state = 'dead';
       char.deathTimer = 0;
       hitParticle(CHAR_X, char.y - 60);
-      if (score > hiScore) { hiScore = score; document.getElementById('hi-val').textContent = hiScore; }
+      sfxHit();
+      if (score > hiScore) {
+        hiScore = score;
+        document.getElementById('hi-val').textContent = hiScore;
+        try { localStorage.setItem(HI_KEY, String(hiScore)); } catch (e) { }
+      }
+      updatePauseBtn();
     }
 
     // ── OBSTACLE SPAWN ────────────────────────────────────────────────────
@@ -587,8 +713,18 @@
         // gravity
         char.vy += GRAVITY;
         char.y += char.vy;
-        if (char.y >= GROUND_Y) { char.y = GROUND_Y; char.vy = 0; char.onGround = true; }
-        if (!char.onGround && char.y < GROUND_Y) char.onGround = false;
+        if (char.y >= GROUND_Y) {
+          if (!char.onGround) {
+            // 착지: 먼지 파티클 + 착지음
+            for (let i = 0; i < 6; i++) particles.push(dustParticle());
+            sfxLand();
+          }
+          char.y = GROUND_Y; char.vy = 0; char.onGround = true;
+        }
+
+        // 100점 단위 마일스톤 효과음
+        const ms = Math.floor(score / 100);
+        if (ms > lastMilestone) { lastMilestone = ms; sfxScore(); }
 
         // duck (only on ground)
         char.duck = !!(keys['ArrowDown'] || keys['s']) && char.onGround;
@@ -621,6 +757,7 @@
               life: 1.4, decay: 0.04,
               r: 8, col: '#ff7675', sym: `+${bonus}`,
             });
+            sfxScore();
             // remove this can from obstacles
             obstacles = obstacles.filter(o => o !== hit);
           } else {
@@ -636,16 +773,24 @@
         else { char.y = GROUND_Y; char.vy = 0; }
       }
 
-      // particles
-      for (const p of particles) {
-        p.x += p.vx; p.y += p.vy; p.vy += 0.12; p.life -= p.decay;
+      // particles (일시정지 중에는 정지)
+      if (state !== 'pause') {
+        for (const p of particles) {
+          p.x += p.vx; p.y += p.vy; p.vy += 0.12; p.life -= p.decay;
+        }
+        particles = particles.filter(p => p.life > 0);
       }
-      particles = particles.filter(p => p.life > 0);
 
-      // bg parallax
-      for (const s of bgStars) { s.x -= s.speed; if (s.x < 0) s.x = W; }
-      for (const m of bgMountains) { m.x -= m.speed; if (m.x + m.w < 0) m.x = W + Math.random() * 100; }
-      for (const d of groundDots) { d.x -= speed * 0.7; if (d.x < 0) d.x = W + (d.x % 10); }
+      // bg parallax (일시정지 중에는 배경도 정지)
+      if (state !== 'pause') {
+        for (const s of bgStars) { s.x -= s.speed; if (s.x < 0) s.x = W; }
+        for (const m of bgMountains) { m.x -= m.speed; if (m.x + m.w < 0) m.x = W + Math.random() * 100; }
+        for (const d of groundDots) { d.x -= speed * 0.7; if (d.x < 0) d.x = W + (d.x % 10); }
+        for (const cl of bgClouds) {
+          cl.x -= cl.speed;
+          if (cl.x < -140) { cl.x = W + 80; cl.y = 25 + Math.random() * 130; }
+        }
+      }
 
       // ── DRAW ──────────────────────────────────────────────────────────
       ctx.clearRect(0, 0, W, H);
@@ -662,6 +807,17 @@
         ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
       }
       ctx.globalAlpha = 1;
+
+      // clouds (뭉게구름)
+      for (const cl of bgClouds) {
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.beginPath();
+        ctx.arc(cl.x, cl.y, 16 * cl.s, 0, Math.PI * 2);
+        ctx.arc(cl.x + 18 * cl.s, cl.y - 8 * cl.s, 13 * cl.s, 0, Math.PI * 2);
+        ctx.arc(cl.x + 36 * cl.s, cl.y, 15 * cl.s, 0, Math.PI * 2);
+        ctx.arc(cl.x + 18 * cl.s, cl.y + 6 * cl.s, 14 * cl.s, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       // mountains
       for (const m of bgMountains) {
@@ -743,6 +899,17 @@
         ctx.fillText('장애물을 피해 달려라!', W / 2, H / 2 + 5);
         ctx.font = 'bold 16px Fira Code'; ctx.fillStyle = '#ffb432';
         ctx.fillText('[ ↑  SPACE  탭 ] 으로 시작', W / 2, H / 2 + 45);
+        ctx.textAlign = 'left';
+      }
+
+      // PAUSE screen
+      if (state === 'pause') {
+        ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(0, 0, W, H);
+        ctx.textAlign = 'center';
+        ctx.font = 'bold 34px Fira Code'; ctx.fillStyle = '#ffb432';
+        ctx.fillText('⏸ 일시정지', W / 2, H / 2 - 10);
+        ctx.font = '15px Fira Code'; ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.fillText('[ P ] 키 또는 화면 터치로 계속하기', W / 2, H / 2 + 28);
         ctx.textAlign = 'left';
       }
 
