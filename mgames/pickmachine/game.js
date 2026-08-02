@@ -8,18 +8,104 @@ const GameState = {
 let currentState = GameState.HOME;
 let collectedDolls = {}; // { dollId: count }
 let currentGameDolls = []; // 현재 게임의 인형들
+let gameStats = { plays: 0, wins: 0 }; // 누적 통계
+
+// ===== 사운드 엔진 (Web Audio API, 외부 파일 없음) =====
+const SFX = (() => {
+    let ctx = null;
+    let muted = localStorage.getItem('clawMachineMuted') === '1';
+
+    function getCtx() {
+        if (!ctx) {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return null;
+            ctx = new AC();
+        }
+        if (ctx.state === 'suspended') ctx.resume();
+        return ctx;
+    }
+
+    // 간단한 톤 재생 헬퍼
+    function tone(freq, duration, opts = {}) {
+        if (muted) return;
+        const ac = getCtx();
+        if (!ac) return;
+        const { type = 'sine', volume = 0.12, delay = 0, slideTo = null } = opts;
+        const t0 = ac.currentTime + delay;
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, t0);
+        if (slideTo) {
+            osc.frequency.exponentialRampToValueAtTime(Math.max(slideTo, 1), t0 + duration);
+        }
+        gain.gain.setValueAtTime(volume, t0);
+        gain.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+        osc.connect(gain);
+        gain.connect(ac.destination);
+        osc.start(t0);
+        osc.stop(t0 + duration + 0.05);
+    }
+
+    return {
+        isMuted: () => muted,
+        toggleMute() {
+            muted = !muted;
+            localStorage.setItem('clawMachineMuted', muted ? '1' : '0');
+            if (!muted) tone(660, 0.08, { type: 'square', volume: 0.08 });
+            return muted;
+        },
+        move() { tone(320, 0.05, { type: 'square', volume: 0.04 }); },
+        click() { tone(520, 0.06, { type: 'triangle', volume: 0.1 }); },
+        descend() { tone(220, 0.6, { type: 'sawtooth', volume: 0.06, slideTo: 110 }); },
+        rise() { tone(110, 0.6, { type: 'sawtooth', volume: 0.05, slideTo: 220 }); },
+        grab() {
+            tone(180, 0.12, { type: 'square', volume: 0.12 });
+            tone(140, 0.15, { type: 'square', volume: 0.1, delay: 0.1 });
+        },
+        miss() { tone(280, 0.3, { type: 'sawtooth', volume: 0.1, slideTo: 90 }); },
+        drop() { tone(420, 0.12, { type: 'triangle', volume: 0.12, slideTo: 200 }); },
+        win(rarity) {
+            // 승리 팡파레 (도, 미, 솔, 도)
+            [523, 659, 784, 1047].forEach((f, i) => {
+                tone(f, 0.18, { type: 'triangle', volume: 0.12, delay: i * 0.12 });
+            });
+            // 레어 이상은 추가 반짝임 효과음
+            if (rarity === 'super_rare' || rarity === 'secret') {
+                [1319, 1568, 2093].forEach((f, i) => {
+                    tone(f, 0.25, { type: 'sine', volume: 0.09, delay: 0.55 + i * 0.13 });
+                });
+            }
+        }
+    };
+})();
 
 // 로컬 스토리지에서 데이터 로드
 function loadGameData() {
-    const saved = localStorage.getItem('clawMachineCollection');
-    if (saved) {
-        collectedDolls = JSON.parse(saved);
+    try {
+        const saved = localStorage.getItem('clawMachineCollection');
+        if (saved) {
+            collectedDolls = JSON.parse(saved) || {};
+        }
+    } catch (e) {
+        collectedDolls = {};
+    }
+    try {
+        const savedStats = localStorage.getItem('clawMachineStats');
+        if (savedStats) {
+            const parsed = JSON.parse(savedStats);
+            gameStats.plays = parsed.plays || 0;
+            gameStats.wins = parsed.wins || 0;
+        }
+    } catch (e) {
+        gameStats = { plays: 0, wins: 0 };
     }
 }
 
 // 로컬 스토리지에 데이터 저장
 function saveGameData() {
     localStorage.setItem('clawMachineCollection', JSON.stringify(collectedDolls));
+    localStorage.setItem('clawMachineStats', JSON.stringify(gameStats));
 }
 
 // 화면 전환
@@ -54,6 +140,11 @@ function updateHomeStats() {
 
     document.getElementById('collected-count').textContent = `${collectedCount} / ${totalCount}`;
     document.getElementById('collection-rate').textContent = `${rate}%`;
+
+    const winsElement = document.getElementById('total-wins');
+    if (winsElement) {
+        winsElement.textContent = `${gameStats.wins}회`;
+    }
 }
 
 // 등급별 랜덤 인형 선택
@@ -80,6 +171,10 @@ function initGame() {
     currentGameDolls = [];
     const container = document.getElementById('dolls-container');
     container.innerHTML = '';
+
+    // 집게에 남아있는 인형 정리
+    caughtDollElement = null;
+    document.querySelectorAll('#claw .doll-item').forEach(el => el.remove());
 
     // 30-50개의 랜덤 인형 생성
     const dollCount = 30 + Math.floor(Math.random() * 21);
@@ -175,23 +270,33 @@ function updateClawPosition() {
 // 키보드 조작
 document.addEventListener('keydown', (e) => {
     if (currentState !== GameState.GAME || isGrabbing) return;
+    // 결과 모달이 열려 있으면 조작 금지
+    if (document.getElementById('result-modal').classList.contains('active')) return;
 
     switch (e.key.toLowerCase()) {
         case 'arrowleft':
+            e.preventDefault(); // 화면 스크롤 방지
             clawPosition.x = Math.max(10, clawPosition.x - 5);
             updateClawPosition();
+            SFX.move();
             break;
         case 'arrowright':
+            e.preventDefault();
             clawPosition.x = Math.min(90, clawPosition.x + 5);
             updateClawPosition();
+            SFX.move();
             break;
         case 'arrowup':
+            e.preventDefault();
             clawPosition.y = Math.max(0, clawPosition.y - 10);
             updateClawPosition();
+            SFX.move();
             break;
         case 'arrowdown':
+            e.preventDefault();
             clawPosition.y = Math.min(50, clawPosition.y + 10);
             updateClawPosition();
+            SFX.move();
             break;
         case 's':
         case ' ':
@@ -206,11 +311,15 @@ function startGrabbing() {
     if (isGrabbing) return;
     isGrabbing = true;
 
+    gameStats.plays++;
+    saveGameData();
+
     const claw = document.getElementById('claw');
     const cable = document.getElementById('claw-cable');
 
     // 집게 내려가기
     claw.classList.add('grabbing');
+    SFX.descend();
     let currentHeight = 100;
 
     const dropInterval = setInterval(() => {
@@ -219,12 +328,14 @@ function startGrabbing() {
 
         if (currentHeight >= 400) {
             clearInterval(dropInterval);
+            SFX.grab();
 
             // 인형 잡기 시도
             setTimeout(() => {
                 const caughtDoll = tryToCatchDoll();
 
                 // 집게 올라가기
+                SFX.rise();
                 const riseInterval = setInterval(() => {
                     currentHeight -= 10;
                     cable.style.height = currentHeight + 'px';
@@ -240,6 +351,7 @@ function startGrabbing() {
                             // 실패
                             claw.classList.remove('grabbing');
                             isGrabbing = false;
+                            SFX.miss();
                             setTimeout(() => {
                                 if (confirm('아쉽게도 놓쳤습니다! 다시 시도하시겠습니까?')) {
                                     // 계속 플레이
@@ -281,12 +393,24 @@ function moveToExit(claw, caughtDoll) {
             // 인형 떨어뜨리기
             setTimeout(() => {
                 claw.classList.remove('grabbing');
-                isGrabbing = false;
-                showResult(caughtDoll);
+                SFX.drop();
+                if (caughtDollElement) {
+                    const dropped = caughtDollElement;
+                    caughtDollElement = null;
+                    dropped.classList.add('dropping');
+                    setTimeout(() => dropped.remove(), 500);
+                }
+                setTimeout(() => {
+                    isGrabbing = false;
+                    showResult(caughtDoll);
+                }, 400);
             }, 300);
         }
     }, 16); // ~60fps
 }
+
+// 집게에 매달린 인형 요소
+let caughtDollElement = null;
 
 // 인형 잡기 시도
 function tryToCatchDoll() {
@@ -295,6 +419,7 @@ function tryToCatchDoll() {
     const dolls = document.querySelectorAll('.doll-item');
 
     for (let dollElement of dolls) {
+        if (dollElement.classList.contains('caught')) continue;
         const dollRect = dollElement.getBoundingClientRect();
 
         // 충돌 감지
@@ -314,13 +439,38 @@ function tryToCatchDoll() {
             if (doll.rarity === 'secret') successRate = 0.15;
 
             if (Math.random() < successRate) {
-                dollElement.remove();
+                // 잡은 인형을 집게에 매달아 함께 이동시키기
+                dollElement.style.left = '';
+                dollElement.style.top = '';
+                dollElement.classList.add('caught');
+                document.getElementById('claw').appendChild(dollElement);
+                caughtDollElement = dollElement;
                 return doll;
             }
         }
     }
 
     return null;
+}
+
+// 승리 축하 색종이 효과
+function launchConfetti() {
+    const modal = document.getElementById('result-modal');
+    const colors = ['#FFD700', '#FF6B9D', '#60A5FA', '#A855F7', '#4ADE80', '#FFA07A'];
+
+    for (let i = 0; i < 40; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = Math.random() * 100 + '%';
+        piece.style.background = colors[i % colors.length];
+        const size = 6 + Math.random() * 7;
+        piece.style.width = size + 'px';
+        piece.style.height = size + 'px';
+        piece.style.animationDelay = (Math.random() * 0.6) + 's';
+        piece.style.animationDuration = (1.4 + Math.random() * 1.2) + 's';
+        modal.appendChild(piece);
+        setTimeout(() => piece.remove(), 3500);
+    }
 }
 
 // 결과 표시
@@ -334,7 +484,10 @@ function showResult(doll) {
     } else {
         collectedDolls[doll.id] = 1;
     }
+    gameStats.wins++;
     saveGameData();
+
+    SFX.win(doll.rarity);
 
     // 모달 내용 설정
     document.getElementById('result-icon').textContent = isNew ? '🎉' : '✨';
@@ -352,6 +505,7 @@ function showResult(doll) {
         : `보유 개수: ${collectedDolls[doll.id]}개`;
 
     modal.classList.add('active');
+    launchConfetti();
 }
 
 // 등급 텍스트
@@ -408,28 +562,58 @@ function renderCollection(filterRarity = 'all') {
 
 // 이벤트 리스너
 document.getElementById('start-game-btn').addEventListener('click', () => {
+    SFX.click();
     switchScreen(GameState.GAME);
 });
 
 document.getElementById('collection-btn').addEventListener('click', () => {
+    SFX.click();
     switchScreen(GameState.COLLECTION);
 });
 
 document.getElementById('back-to-home').addEventListener('click', () => {
+    if (isGrabbing) return; // 뽑기 중에는 이동 금지
+    SFX.click();
     switchScreen(GameState.HOME);
 });
 
 document.getElementById('back-to-home-2').addEventListener('click', () => {
+    SFX.click();
     switchScreen(GameState.HOME);
 });
 
 document.getElementById('continue-btn').addEventListener('click', () => {
+    SFX.click();
     document.getElementById('result-modal').classList.remove('active');
 });
+
+// 인형 다시 채우기 버튼
+document.getElementById('restart-game').addEventListener('click', () => {
+    if (isGrabbing) return;
+    SFX.click();
+    initGame();
+});
+
+// 사운드 켜기/끄기 토글
+const soundToggleBtn = document.getElementById('sound-toggle');
+
+function updateSoundToggle() {
+    const muted = SFX.isMuted();
+    soundToggleBtn.textContent = muted ? '🔇' : '🔊';
+    soundToggleBtn.title = muted ? '소리 켜기' : '소리 끄기';
+}
+
+soundToggleBtn.addEventListener('click', () => {
+    SFX.toggleMute();
+    updateSoundToggle();
+});
+
+updateSoundToggle();
 
 // 도감 필터
 document.querySelectorAll('.filter-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
+        SFX.click();
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
         renderCollection(e.target.dataset.rarity);

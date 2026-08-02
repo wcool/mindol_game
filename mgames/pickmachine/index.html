@@ -13,6 +13,9 @@
 </head>
 
 <body>
+    <!-- 사운드 켜기/끄기 -->
+    <button id="sound-toggle" class="sound-toggle" title="소리 끄기" aria-label="소리 켜기/끄기">🔊</button>
+
     <!-- 홈 화면 -->
     <div id="home-screen" class="screen active">
         <div class="home-container">
@@ -43,6 +46,10 @@
                     <div class="stat-label">수집률</div>
                     <div class="stat-value" id="collection-rate">0%</div>
                 </div>
+                <div class="stat-item">
+                    <div class="stat-label">뽑기 성공</div>
+                    <div class="stat-value" id="total-wins">0회</div>
+                </div>
             </div>
             <div style="text-align:center; margin-top:12px;">
                 <span style="font-size:0.8rem; color:#94a3b8;">이 게임이 마음에 드세요?</span>
@@ -55,12 +62,15 @@
     <div id="game-screen" class="screen">
         <div class="game-container">
             <div class="game-header">
-                <button class="btn btn-back" id="back-to-home" onclick="window.location.href='../../index.html'">
+                <button class="btn btn-back" id="back-to-home">
                     ← 홈으로
                 </button>
                 <div class="game-info">
                     <span id="attempts-left">남은 기회: ∞</span>
                 </div>
+                <button class="btn btn-back" id="restart-game" title="인형을 새로 채웁니다">
+                    🔄 다시 채우기
+                </button>
             </div>
 
             <div class="game-area">
@@ -184,7 +194,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             if (typeof LikesWidget !== 'undefined') LikesWidget.init('pickmachine');
         });
-    </script>`n
+    </script>
 </body>
 
 </html>

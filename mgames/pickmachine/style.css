@@ -250,6 +250,7 @@ body {
 .claw-cable {
     width: 6px;
     height: 100px;
+    transition: height 0.05s linear;
     background: linear-gradient(90deg, #555, #888, #555);
     margin: 0 auto;
     box-shadow:
@@ -456,6 +457,34 @@ body {
 
     100% {
         background-position: 200% 50%;
+    }
+}
+
+/* 집게에 잡힌 인형 */
+.doll-item.caught {
+    position: absolute;
+    left: 50%;
+    top: 48px;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 50px;
+    z-index: 5;
+    transition: none;
+}
+
+.doll-item.caught:hover {
+    transform: translateX(-50%);
+}
+
+/* 경품 출구로 떨어지는 인형 */
+.doll-item.caught.dropping {
+    animation: dollDrop 0.5s ease-in forwards;
+}
+
+@keyframes dollDrop {
+    to {
+        transform: translateX(-50%) translateY(280px) rotate(20deg);
+        opacity: 0;
     }
 }
 
@@ -729,6 +758,58 @@ kbd {
     font-size: 0.75rem;
     margin-top: 0.3rem;
     opacity: 0.8;
+}
+
+/* 사운드 토글 버튼 */
+.sound-toggle {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    z-index: 2000;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    font-size: 1.4rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: var(--shadow-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.sound-toggle:hover {
+    transform: scale(1.1);
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.sound-toggle:active {
+    transform: scale(0.95);
+}
+
+/* 승리 축하 색종이 */
+.confetti-piece {
+    position: absolute;
+    top: -20px;
+    border-radius: 2px;
+    pointer-events: none;
+    z-index: 1001;
+    animation: confettiFall 1.5s linear forwards;
+}
+
+@keyframes confettiFall {
+    0% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(105vh) rotate(720deg);
+        opacity: 0.5;
+    }
 }
 
 /* 결과 모달 */
