@@ -1,6 +1,6 @@
 /* ============================================================
    data.js — 몬스터 헌터 RPG 데이터
-   지역 16곳 × 몬스터 5종(일반 4 + 보스 1) = 80종
+   지역 17곳(+최종 보너스 지역 '우주') × 몬스터 5종(일반 4 + 보스 1) = 85종
    펫 20종 + 캡슐 머신 3종
    ============================================================ */
 
@@ -177,6 +177,18 @@ const REGIONS = [
     ],
     boss: { name: '혼돈의 신', emoji: '🌌' },
   },
+  {
+    /* 최종 보너스 지역 — 16개 지역을 모두 클리어(천상계 보스 처치)해야 해금.
+       아래에서 기본 곡선 대비 추가 배율을 곱해 확실히 최강 지역으로 만든다. */
+    name: '우주', emoji: '🌌', theme: ['#c3c6f2', '#e7e8fb'],
+    mobs: [
+      { name: '외계 정찰병', emoji: '👽' },
+      { name: '운석 골렘',   emoji: '☄️' },
+      { name: '성운 정령',   emoji: '🌠' },
+      { name: '우주 해적',   emoji: '🚀' },
+    ],
+    boss: { name: '은하 파괴자', emoji: '🪐' },
+  },
 ];
 
 /* 각 몬스터에 스탯 부여 */
@@ -184,6 +196,21 @@ REGIONS.forEach((rg, r) => {
   rg.mobs.forEach((m, s) => Object.assign(m, mobStats(r, s, false)));
   Object.assign(rg.boss, mobStats(r, 3, true), { isBoss: true });
 });
+
+/* 우주는 지역 곡선을 그대로 잇지 않고 더 강하게 — 최종 관문 (과하지 않은 수준으로 조정) */
+(function boostSpaceRegion() {
+  const SPACE_HP_MULT = 1.8, SPACE_ATK_MULT = 1.5, SPACE_DEF_MULT = 1.3, SPACE_REWARD_MULT = 2.5;
+  const sp = REGIONS[REGIONS.length - 1];
+  const boost = (m) => {
+    m.hp = Math.round(m.hp * SPACE_HP_MULT);
+    m.atk = Math.round(m.atk * SPACE_ATK_MULT);
+    m.def = Math.round(m.def * SPACE_DEF_MULT);
+    m.exp = Math.round(m.exp * SPACE_REWARD_MULT);
+    m.gold = Math.round(m.gold * SPACE_REWARD_MULT);
+  };
+  sp.mobs.forEach(boost);
+  boost(sp.boss);
+})();
 
 const BOSS_UNLOCK_KILLS = 10; // 지역별 일반 몬스터 처치 수 → 보스 도전 가능
 
@@ -312,8 +339,9 @@ const ACHIEVEMENTS = [
   { id: 'pet5',      name: '펫 친구',       desc: '펫 5종 수집',              reward: 5000,     target: 5,        value: (s) => Object.keys(s.pets).length },
   { id: 'pet20',     name: '펫 마스터',     desc: '펫 20종 모두 수집',        reward: 2000000,  target: 20,       value: (s) => Object.keys(s.pets).length },
   { id: 'region8',   name: '중간 계주',     desc: '지역 8곳 해금',            reward: 100000,   target: 8,        value: (s) => s.unlockedRegion + 1 },
-  { id: 'region16',  name: '세계 정복',     desc: '지역 16곳 모두 해금',      reward: 5000000,  target: 16,       value: (s) => s.unlockedRegion + 1 },
-  { id: 'codex80',   name: '도감 완성',     desc: '몬스터 80종 모두 발견',    reward: 10000000, target: 80,       value: (s) => Object.keys(s.codex).length },
+  { id: 'region16',  name: '세계 정복',     desc: '지역 16곳 해금 (우주 진입 직전)', reward: 3000000,  target: 16,  value: (s) => s.unlockedRegion + 1 },
+  { id: 'region17',  name: '우주 정복자',   desc: '우주까지 모든 지역 해금',  reward: 10000000, target: 17,       value: (s) => s.unlockedRegion + 1 },
+  { id: 'codex85',   name: '도감 완성',     desc: '몬스터 85종 모두 발견',    reward: 10000000, target: 85,       value: (s) => Object.keys(s.codex).length },
 ];
 
 /* 캡슐 머신 — unlockRegion: 해당 지역 해금 시 이용 가능 */
